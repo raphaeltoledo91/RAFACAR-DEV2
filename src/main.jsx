@@ -8,6 +8,8 @@ import {
   Command,
   Cpu,
   Gauge,
+  KeyRound,
+  LogOut,
   Layers,
   LocateFixed,
   MapPinned,
@@ -131,7 +133,10 @@ async function request(path, options = {}) {
     try { payload = text ? JSON.parse(text) : null; }
     catch { payload = { raw: text }; }
     if (!response.ok) {
-      throw new Error(payload?.error || payload?.message || payload?.raw || `HTTP ${response.status}`);
+      const error = new Error(payload?.error || payload?.message || payload?.raw || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.payload = payload;
+      throw error;
     }
     return payload;
   } catch (error) {
@@ -827,18 +832,22 @@ function KeyValueTable({ data }) {
   );
 }
 
-function ConfigPage({ config, health, refreshHealth }) {
+function ConfigPage({ config, health, refreshHealth, authUser, onLogout }) {
   return (
     <section className="panel">
       <h3>Configuração e segurança</h3>
       <div className="success-box">Frontend revisado com proxy seguro, rate limit, CSP, timeout, cache control e credenciais fora do React.</div>
       <div className="kv"><span>Servidor Traccar</span><b>{config?.traccarUrl || '-'}</b></div>
-      <div className="kv"><span>Modo de autenticação</span><b>{config?.authMode || '-'}</b></div>
+      <div className="kv"><span>Modo de autenticação</span><b>{config?.authMode || 'traccar-user-session'}</b></div>
+      <div className="kv"><span>Usuário logado</span><b>{authUser?.name || authUser?.email || '-'}</b></div>
+      <div className="kv"><span>Perfil admin</span><b>{yesNo(authUser?.administrator)}</b></div>
       <div className="kv"><span>Polling</span><b>{config?.pollingMs || DEFAULT_POLLING_MS} ms</b></div>
-      <div className="kv"><span>Credenciais detectadas</span><b>{yesNo(config?.hasCredentials)}</b></div>
+      <div className="kv"><span>Autenticado</span><b>{yesNo(config?.authenticated || health?.authenticated)}</b></div>
       <div className="kv"><span>Health</span><b>{health?.ok ? 'OK' : '-'}</b></div>
-      <div className="kv"><span>Cookie remoto</span><b>{yesNo(health?.hasRemoteCookie)}</b></div>
-      <button className="ghost-btn" style={{ marginTop: 14 }} onClick={refreshHealth}><ShieldCheck size={17} /> Testar health</button>
+      <div className="actions" style={{ marginTop: 14 }}>
+        <button className="ghost-btn" onClick={refreshHealth}><ShieldCheck size={17} /> Testar health</button>
+        <button className="danger-btn" onClick={onLogout}><LogOut size={17} /> Sair</button>
+      </div>
     </section>
   );
 }
@@ -856,8 +865,40 @@ function applyFilters(items, search, statusFilter) {
   });
 }
 
+
+function LoginPage({ onLogin }) {
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const submit = async (event) => {
+    event.preventDefault(); setError(''); setBusy(true);
+    try {
+      const payload = await request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: login.trim(), password }) });
+      onLogin(payload.user || null, payload.config || null);
+    } catch (err) { setError(err.message || 'Falha ao entrar com as credenciais do Traccar.'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="login-shell"><div className="login-card">
+      <div className="login-brand"><div className="logo">RF</div><div><h1>RAFACAR DEV2</h1><p>Entre usando as credenciais do Traccar</p></div></div>
+      <form onSubmit={submit} className="login-form">
+        <label><small>Usuário ou e-mail Traccar</small><input value={login} onChange={(event) => setLogin(event.target.value)} autoComplete="username" placeholder="usuario@empresa.com ou login" required /></label>
+        <label><small>Senha Traccar</small><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Digite sua senha" required /></label>
+        {error && <div className="error-box"><b>Login não autorizado:</b> {error}</div>}
+        <button className="primary-btn login-submit" disabled={busy} type="submit"><KeyRound size={18} /> {busy ? 'Validando no Traccar...' : 'Entrar no painel'}</button>
+      </form>
+      <div className="login-security"><ShieldCheck size={16} /><span>Sua senha é enviada somente ao backend local, que autentica no Traccar e guarda a sessão em cookie HttpOnly.</span></div>
+    </div></div>
+  );
+}
+function AuthLoading() {
+  return <div className="login-shell"><div className="login-card compact"><div className="login-brand"><div className="logo">RF</div><div><h1>RAFACAR DEV2</h1><p>Verificando sessão segura...</p></div></div></div></div>;
+}
+
 function App() {
   const { theme, setTheme } = useTheme();
+  const [auth, setAuth] = useState({ loading: true, authenticated: false, user: null });
   const [activeTab, setActiveTab] = useState('dashboard');
   const [devices, setDevices] = useState([]);
   const [positions, setPositions] = useState([]);
@@ -890,6 +931,7 @@ function App() {
       setLastUpdate(new Date());
       if (payload.errors?.length) setError(payload.errors.join(' | '));
     } catch (err) {
+      if (err.status === 401) { setAuth({ loading: false, authenticated: false, user: null }); setError(''); return; }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -906,12 +948,19 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-    refreshHealth();
-  }, [loadData, refreshHealth]);
+  const checkAuth = useCallback(async () => {
+    try { const payload = await request('/api/auth/me'); setAuth({ loading: false, authenticated: true, user: payload.user || null }); setConfig(payload.config || null); }
+    catch { setAuth({ loading: false, authenticated: false, user: null }); }
+  }, []);
+  const handleLogin = useCallback((user, nextConfig) => { setAuth({ loading: false, authenticated: true, user }); setConfig(nextConfig || null); setLoading(true); }, []);
+  const handleLogout = useCallback(async () => {
+    try { await request('/api/auth/logout', { method: 'POST', body: JSON.stringify({}) }); } catch { /* ignore */ }
+    setAuth({ loading: false, authenticated: false, user: null }); setDevices([]); setPositions([]); setEvents([]); setServerInfo(null); setHealth(null); setError(''); setLoading(false);
+  }, []);
+  useEffect(() => { checkAuth(); }, [checkAuth]);
+  useEffect(() => { if (auth.authenticated) { loadData(); refreshHealth(); } }, [auth.authenticated, loadData, refreshHealth]);
 
-  usePolling(() => loadData({ silent: true }), Number(config?.pollingMs || DEFAULT_POLLING_MS), true);
+  usePolling(() => loadData({ silent: true }), Number(config?.pollingMs || DEFAULT_POLLING_MS), auth.authenticated);
 
   const items = useMemo(() => enrichDevices(devices, positions, events), [devices, positions, events]);
   const filteredItems = useMemo(() => applyFilters(items, search, statusFilter), [items, search, statusFilter]);
@@ -928,14 +977,17 @@ function App() {
   const title = tabs.find(([key]) => key === activeTab)?.[1] || 'Dashboard';
   const subtitle = serverInfo?.attributes?.title || serverInfo?.attributes?.description || 'Rastreamento em tempo real via Traccar';
 
+  if (auth.loading) return <AuthLoading />;
+  if (!auth.authenticated) return <LoginPage onLogin={handleLogin} />;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="logo">TD</div>
+          <div className="logo">RF</div>
           <div>
-            <h1>TRACCAR DEV</h1>
-            <span>Rafacar Rastreadores · v5.1</span>
+            <h1>RAFACAR DEV2</h1>
+            <span>{auth.user?.name || auth.user?.email || 'Usuário Traccar'}</span>
           </div>
         </div>
         <nav className="nav">
@@ -964,6 +1016,7 @@ function App() {
             <button className="primary-btn" onClick={() => loadData({ silent: true })} disabled={refreshing}>
               <RefreshCw size={17} /> {refreshing ? 'Atualizando...' : 'Atualizar'}
             </button>
+            <button className="danger-btn" onClick={handleLogout}><LogOut size={17} /> Sair</button>
           </div>
         </div>
 
@@ -988,7 +1041,7 @@ function App() {
         {activeTab === 'eventos' && <EventsPage events={events} devicesById={devicesById} />}
         {activeTab === 'comandos' && <CommandsPage items={items} />}
         {activeTab === 'atributos' && <AttributesPage items={filteredItems} />}
-        {activeTab === 'config' && <ConfigPage config={config} health={health} refreshHealth={refreshHealth} />}
+        {activeTab === 'config' && <ConfigPage config={config} health={health} refreshHealth={refreshHealth} authUser={auth.user} onLogout={handleLogout} />}
       </main>
     </div>
   );

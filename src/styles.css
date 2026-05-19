@@ -165,3 +165,16 @@ td { color: var(--text); }
   .actions { width: 100%; }
   .actions input, .actions select, .actions button { flex: 1; }
 }
+
+/* Login RAFACAR DEV2 com credenciais Traccar */
+.login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top left, rgba(34,197,94,.22), transparent 34%), radial-gradient(circle at bottom right, rgba(14,165,233,.18), transparent 32%), var(--bg); }
+.login-card { width: min(100%, 460px); border: 1px solid var(--line); border-radius: 30px; background: rgba(15, 23, 42, .94); box-shadow: var(--shadow); padding: 26px; }
+.login-card.compact { width: min(100%, 390px); }
+.login-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.login-brand h1 { margin: 0; font-size: 24px; letter-spacing: .04em; }
+.login-brand p { margin: 4px 0 0; color: var(--muted); }
+.login-form { display: grid; gap: 14px; }
+.login-form label { display: grid; gap: 7px; }
+.login-form small { color: var(--muted); }
+.login-submit { width: 100%; min-height: 48px; margin-top: 4px; }
+.login-security { display: flex; gap: 9px; align-items: flex-start; color: var(--muted); font-size: 12px; line-height: 1.45; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 14px; }
