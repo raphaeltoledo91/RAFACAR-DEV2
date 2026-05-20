@@ -412,3 +412,221 @@ body { background: radial-gradient(circle at 12% 8%, rgba(56, 189, 248, .20), tr
     right: 12px;
   }
 }
+
+/* ============================================================
+   RAFACAR DEV2 - Dashboard compacto + relatórios/playback
+   ============================================================ */
+
+.dashboard-compact-grid {
+  grid-template-columns: repeat(4, minmax(126px, 1fr)) !important;
+  gap: 9px !important;
+  margin-bottom: 8px !important;
+}
+
+.dashboard-compact-grid .card {
+  min-height: 70px !important;
+  padding: 10px 12px !important;
+  border-radius: 18px !important;
+}
+
+.dashboard-compact-grid .card strong {
+  margin-top: 2px !important;
+  font-size: 20px !important;
+  line-height: 1.05 !important;
+}
+
+.dashboard-compact-grid .card small {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+.dashboard-compact-grid .card svg {
+  width: 18px;
+  height: 18px;
+}
+
+.map-dashboard-layout {
+  min-height: calc(100vh - 154px) !important;
+}
+
+.map-stage-panel {
+  min-height: calc(100vh - 154px) !important;
+}
+
+.full-background-map,
+.map-stage-panel .map-wrap {
+  height: calc(100vh - 154px) !important;
+  min-height: 680px !important;
+}
+
+.topbar {
+  margin-bottom: 10px !important;
+}
+
+.topbar h2 {
+  font-size: 22px !important;
+}
+
+.topbar p {
+  font-size: 13px !important;
+}
+
+.reports-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.reports-header h3 {
+  margin: 0 0 4px;
+}
+
+.reports-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.reports-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(160px, .8fr) minmax(170px, .8fr) minmax(170px, .8fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.reports-controls label {
+  display: grid;
+  gap: 6px;
+}
+
+.reports-controls small {
+  color: var(--muted);
+}
+
+.reports-controls select,
+.reports-controls input {
+  width: 100%;
+}
+
+.reports-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, .65fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.report-map-wrap {
+  min-height: 510px;
+  height: calc(100vh - 360px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.report-map-wrap .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.reports-results {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(15, 23, 42, .56);
+  min-width: 0;
+}
+
+.report-table {
+  max-height: calc(100vh - 530px);
+  min-height: 260px;
+  margin-top: 10px;
+}
+
+.report-table td,
+.report-table th {
+  font-size: 12px;
+  padding: 9px;
+}
+
+.report-point-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: #fff;
+  border: 3px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .38);
+  background: var(--blue);
+}
+
+.report-point-icon.good {
+  background: var(--green);
+}
+
+.report-point-icon.bad {
+  background: var(--red);
+}
+
+@media (max-width: 1180px) {
+  .dashboard-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .reports-controls,
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-map-wrap {
+    height: 520px;
+  }
+
+  .full-background-map,
+  .map-stage-panel .map-wrap {
+    min-height: 560px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .dashboard-compact-grid .card {
+    min-height: 64px !important;
+    padding: 9px !important;
+  }
+
+  .reports-header {
+    display: grid;
+  }
+
+  .reports-actions {
+    display: grid;
+  }
+
+  .reports-actions button {
+    width: 100%;
+  }
+
+  .report-map-wrap {
+    height: 420px;
+    min-height: 420px;
+  }
+}

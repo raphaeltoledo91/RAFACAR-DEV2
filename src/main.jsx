@@ -31,7 +31,7 @@ import {
   WifiOff,
   Zap
 } from 'lucide-react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Polyline, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import './styles.css';
 
@@ -106,6 +106,7 @@ const tabs = [
   ['dashboard', 'Dashboard', Activity],
   ['veiculos', 'Veículos', Car],
   ['eventos', 'Alertas', AlertTriangle],
+  ['relatorios', 'Relatórios', Route],
   ['comandos', 'Comandos', Command],
   ['atributos', 'Atributos', Cpu],
   ['config', 'Config', Settings]
@@ -636,18 +637,18 @@ function Badge({ tone = 'info', children }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
 
-function MapAutoFit({ positions, enabled = true }) {
+function MapAutoFit({ positions, enabled = true, singleZoom = 17, maxZoom = 17, padding = [72, 72] }) {
   const map = useMap();
   useEffect(() => {
     if (!enabled || !Array.isArray(positions) || positions.length === 0) return;
     const points = positions.map(getLatLng).filter(Boolean);
     if (!points.length) return;
     if (points.length === 1) {
-      map.setView(points[0], 15, { animate: true });
+      map.setView(points[0], singleZoom, { animate: true });
       return;
     }
-    map.fitBounds(points, { padding: [46, 46], maxZoom: 16 });
-  }, [enabled, map, positions]);
+    map.fitBounds(points, { padding, maxZoom });
+  }, [enabled, map, positions, singleZoom, maxZoom, padding]);
   return null;
 }
 
@@ -746,7 +747,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
 
   return (
     <>
-      <div className="card-grid modern-card-grid">
+      <div className="card-grid modern-card-grid dashboard-compact-grid">
         <StatCard icon={<Car size={22} />} label="Veículos" value={stats.total} hint="Total carregado do Traccar" />
         <StatCard icon={<Navigation size={22} />} label="Movimento" value={moving} hint="Carro verde no mapa" />
         <StatCard icon={<TimerReset size={22} />} label="Ociosos" value={idle} hint="Ligado e parado +3 min" />
@@ -773,7 +774,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
           <div className="map-wrap full-background-map">
             <MapContainer center={getLatLng(validPositions[0]) || DEFAULT_CENTER} zoom={12} scrollWheelZoom>
               <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
-              <MapAutoFit positions={validPositions} enabled={fitMap} />
+              <MapAutoFit positions={validPositions} enabled={fitMap} singleZoom={17} maxZoom={17} padding={[72, 72]} />
               {items.map((item) => <VehicleMarker key={item.device.id} item={item} />)}
             </MapContainer>
           </div>
@@ -1037,6 +1038,238 @@ function KeyValueTable({ data }) {
   );
 }
 
+
+function datetimeLocalValue(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, '0');
+  const d = new Date(date);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function datetimeHoursAgo(hours = 6) {
+  return datetimeLocalValue(new Date(Date.now() - hours * 60 * 60 * 1000));
+}
+
+function isoFromLocalInput(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return new Date().toISOString();
+  return date.toISOString();
+}
+
+function normalizeReportRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.positions)) return payload.positions;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+}
+
+function csvEscape(value) {
+  if (value === null || value === undefined) return '';
+  const output = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return `"${output.replaceAll('"', '""')}"`;
+}
+
+function flattenCsvRow(row = {}) {
+  const attrs = row.attributes && typeof row.attributes === 'object' ? row.attributes : {};
+  return {
+    id: row.id ?? '',
+    deviceId: row.deviceId ?? '',
+    deviceTime: row.deviceTime || row.fixTime || row.serverTime || '',
+    latitude: row.latitude ?? '',
+    longitude: row.longitude ?? '',
+    speedKmh: kmh(row.speed),
+    course: safeCourse(row.course),
+    altitude: row.altitude ?? '',
+    address: row.address || '',
+    ignition: attrs.ignition ?? '',
+    motion: attrs.motion ?? '',
+    battery: attrs.batteryLevel ?? attrs.battery ?? '',
+    voltage: attrs.power ?? attrs.voltage ?? attrs.externalPower ?? ''
+  };
+}
+
+function downloadCsv(filename, rows = []) {
+  const normalized = normalizeArray(rows).map(flattenCsvRow);
+  if (!normalized.length) return false;
+  const headers = Object.keys(normalized[0]);
+  const csv = [
+    headers.join(','),
+    ...normalized.map((row) => headers.map((key) => csvEscape(row[key])).join(','))
+  ].join('\n');
+  const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+function reportPointIcon(label = 'P', tone = 'info') {
+  return L.divIcon({
+    className: '',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18],
+    html: `<div class="report-point-icon ${escapeHtml(tone)}">${escapeHtml(label)}</div>`
+  });
+}
+
+function ReportsPage({ items, layerKey }) {
+  const firstDeviceId = items[0]?.device?.id ? String(items[0].device.id) : '';
+  const [deviceId, setDeviceId] = useState(firstDeviceId);
+  const [from, setFrom] = useState(() => datetimeHoursAgo(6));
+  const [to, setTo] = useState(() => datetimeLocalValue());
+  const [reportType, setReportType] = useState('route');
+  const [rows, setRows] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!deviceId && firstDeviceId) setDeviceId(firstDeviceId);
+  }, [deviceId, firstDeviceId]);
+
+  const selectedDevice = items.find(({ device }) => String(device.id) === String(deviceId))?.device || null;
+  const layer = MAP_LAYERS[layerKey] || MAP_LAYERS.googleRoad || MAP_LAYERS.osm;
+  const routePoints = rows.map(getLatLng).filter(Boolean);
+  const canQuery = Boolean(deviceId && from && to);
+
+  const runReport = async () => {
+    if (!canQuery) {
+      setMessage('Selecione veículo e período para consultar.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage('');
+    setRows([]);
+
+    try {
+      const query = new URLSearchParams({
+        deviceId: String(deviceId),
+        from: isoFromLocalInput(from),
+        to: isoFromLocalInput(to)
+      });
+      const payload = await request(`/api/traccar/reports/${reportType}?${query.toString()}`);
+      const nextRows = normalizeReportRows(payload);
+      setRows(nextRows);
+      setMessage(nextRows.length ? `${nextRows.length} registros encontrados.` : 'Nenhum registro encontrado no período.');
+    } catch (error) {
+      setMessage(`Falha ao consultar relatório: ${error.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportRows = () => {
+    const ok = downloadCsv(`rafacar-${reportType}-${deviceId || 'veiculo'}-${Date.now()}.csv`, rows);
+    if (!ok) setMessage('Não há dados para exportar.');
+  };
+
+  return (
+    <section className="panel reports-panel">
+      <div className="reports-header">
+        <div>
+          <h3>Relatórios, playback e exportação</h3>
+          <p>Consulte rota/playback por período e exporte os dados em CSV.</p>
+        </div>
+        <Badge tone={rows.length ? 'good' : 'info'}>{rows.length} registros</Badge>
+      </div>
+
+      <div className="reports-controls">
+        <label>
+          <small>Veículo</small>
+          <select value={deviceId} onChange={(event) => setDeviceId(event.target.value)}>
+            <option value="">Selecione</option>
+            {items.map(({ device }) => (
+              <option key={device.id} value={device.id}>{getVehicleName(device)}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <small>Tipo</small>
+          <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
+            <option value="route">Playback / rota</option>
+            <option value="trips">Viagens</option>
+            <option value="stops">Paradas</option>
+            <option value="events">Eventos</option>
+            <option value="summary">Resumo</option>
+          </select>
+        </label>
+        <label>
+          <small>De</small>
+          <input type="datetime-local" value={from} onChange={(event) => setFrom(event.target.value)} />
+        </label>
+        <label>
+          <small>Até</small>
+          <input type="datetime-local" value={to} onChange={(event) => setTo(event.target.value)} />
+        </label>
+        <div className="reports-actions">
+          <button className="primary-btn" onClick={runReport} disabled={busy || !canQuery}>
+            <Search size={17} /> {busy ? 'Consultando...' : 'Consultar'}
+          </button>
+          <button className="ghost-btn" onClick={exportRows} disabled={!rows.length}>
+            <Send size={17} /> Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      {message && <div className={message.startsWith('Falha') || message.startsWith('Não há') ? 'error-box' : 'success-box'}>{message}</div>}
+
+      <div className="reports-grid">
+        <div className="report-map-wrap">
+          <MapContainer center={routePoints[0] || DEFAULT_CENTER} zoom={routePoints.length ? 17 : 12} scrollWheelZoom>
+            <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
+            <MapAutoFit positions={rows} enabled={Boolean(routePoints.length)} singleZoom={17} maxZoom={17} padding={[58, 58]} />
+            {routePoints.length > 1 && <Polyline positions={routePoints} weight={5} opacity={0.78} />}
+            {routePoints[0] && (
+              <Marker position={routePoints[0]} icon={reportPointIcon('I', 'good')}>
+                <Popup>Início<br />{formatDate(rows[0]?.deviceTime || rows[0]?.fixTime || rows[0]?.serverTime)}</Popup>
+              </Marker>
+            )}
+            {routePoints.length > 1 && (
+              <Marker position={routePoints[routePoints.length - 1]} icon={reportPointIcon('F', 'bad')}>
+                <Popup>Fim<br />{formatDate(rows[rows.length - 1]?.deviceTime || rows[rows.length - 1]?.fixTime || rows[rows.length - 1]?.serverTime)}</Popup>
+              </Marker>
+            )}
+          </MapContainer>
+        </div>
+
+        <div className="reports-results">
+          <div className="kv"><span>Veículo</span><b>{selectedDevice ? getVehicleName(selectedDevice) : '-'}</b></div>
+          <div className="kv"><span>Período</span><b>{from} até {to}</b></div>
+          <div className="kv"><span>Playback</span><b>{routePoints.length} pontos no mapa</b></div>
+          <div className="table-wrap report-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Vel.</th>
+                  <th>Endereço</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.slice(0, 120).map((row, index) => (
+                  <tr key={`${row.id || row.deviceTime || index}-${index}`}>
+                    <td>{formatDate(row.deviceTime || row.fixTime || row.serverTime)}</td>
+                    <td>{formatSpeed(row.speed)}</td>
+                    <td>{row.address || `${row.latitude ?? '-'}, ${row.longitude ?? '-'}`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {rows.length > 120 && <small className="muted">Mostrando 120 primeiros registros. A exportação CSV inclui todos os registros carregados.</small>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function ConfigPage({ config, health, refreshHealth, authUser, onLogout }) {
   return (
     <section className="panel">
@@ -1123,6 +1356,8 @@ function App() {
   const [fleetPanelHidden, setFleetPanelHidden] = useState(() => localStorage.getItem('rafacar-fleet-panel-hidden') === 'true');
 
   useEffect(() => { localStorage.setItem('traccar-dev-map-layer', layerKey); }, [layerKey]);
+  useEffect(() => { localStorage.setItem('rafacar-sidebar-hidden', String(sidebarHidden)); }, [sidebarHidden]);
+  useEffect(() => { localStorage.setItem('rafacar-fleet-panel-hidden', String(fleetPanelHidden)); }, [fleetPanelHidden]);
 
   const loadData = useCallback(async ({ silent = false } = {}) => {
     setError('');
@@ -1279,6 +1514,7 @@ function App() {
         )}
         {activeTab === 'veiculos' && <VehiclesPage items={filteredItems} />}
         {activeTab === 'eventos' && <EventsPage events={events} devicesById={devicesById} />}
+        {activeTab === 'relatorios' && <ReportsPage items={items} layerKey={layerKey} />}
         {activeTab === 'comandos' && <CommandsPage items={items} />}
         {activeTab === 'atributos' && <AttributesPage items={filteredItems} />}
         {activeTab === 'config' && <ConfigPage config={config} health={health} refreshHealth={refreshHealth} authUser={auth.user} onLogout={handleLogout} />}
