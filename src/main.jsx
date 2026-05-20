@@ -4,6 +4,7 @@ import {
   Battery,
   BatteryCharging,
   Car,
+  Circle,
   Clock3,
   Command,
   Cpu,
@@ -12,6 +13,7 @@ import {
   Layers,
   LocateFixed,
   Lock,
+  LogOut,
   MapPinned,
   Navigation,
   Power,
@@ -25,9 +27,7 @@ import {
   Unlock,
   Wifi,
   WifiOff,
-  Zap,
-  LogOut,
-  createRoot } from 'react-dom/client'; import {   Activity
+  Zap
 } from 'lucide-react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
