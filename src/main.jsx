@@ -1,26 +1,33 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
-  Activity,
   AlertTriangle,
   Battery,
+  BatteryCharging,
   Car,
+  Clock3,
   Command,
   Cpu,
   Gauge,
   KeyRound,
-  LogOut,
   Layers,
   LocateFixed,
+  Lock,
   MapPinned,
+  Navigation,
+  Power,
   RefreshCw,
   Route,
   Search,
   Send,
   Settings,
   ShieldCheck,
+  TimerReset,
+  Unlock,
   Wifi,
-  WifiOff
+  WifiOff,
+  Zap,
+  LogOut,
+  createRoot } from 'react-dom/client'; import {   Activity
 } from 'lucide-react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -265,6 +272,96 @@ function getAttr(source = {}, names = [], fallback = undefined) {
   return fallback;
 }
 
+function booleanValue(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0) return false;
+  const raw = normalizeText(value);
+  if (['true', '1', 'yes', 'sim', 'on', 'ligado', 'ligada', 'active', 'ativo', 'ativa'].includes(raw)) return true;
+  if (['false', '0', 'no', 'nao', 'não', 'off', 'desligado', 'desligada', 'inactive', 'inativo', 'inativa'].includes(raw)) return false;
+  return null;
+}
+
+function telemetryAttr(device = {}, position = {}, names = [], fallback = null) {
+  const pos = position && typeof position === 'object' ? position : {};
+  const dev = device && typeof device === 'object' ? device : {};
+  const posAttrs = getPositionAttributes(pos);
+  const devAttrs = getDeviceAttributes(dev);
+
+  for (const name of names) {
+    if (pos[name] !== undefined && pos[name] !== null && pos[name] !== '') return pos[name];
+    if (posAttrs[name] !== undefined && posAttrs[name] !== null && posAttrs[name] !== '') return posAttrs[name];
+    if (dev[name] !== undefined && dev[name] !== null && dev[name] !== '') return dev[name];
+    if (devAttrs[name] !== undefined && devAttrs[name] !== null && devAttrs[name] !== '') return devAttrs[name];
+  }
+
+  return fallback;
+}
+
+function isIgnitionOn(device = {}, position = {}) {
+  return booleanValue(telemetryAttr(device, position, ['ignition', 'ignicao', 'ignição', 'engine', 'engineOn', 'acc', 'ACC', 'io239'], false)) === true;
+}
+
+function isBlocked(device = {}, position = {}) {
+  return booleanValue(telemetryAttr(device, position, ['blocked', 'bloqueado', 'block', 'locked', 'lock', 'engineBlocked', 'fuelCut', 'relay', 'io240'], false)) === true;
+}
+
+function isMoving(device = {}, position = {}) {
+  const motion = booleanValue(telemetryAttr(device, position, ['motion', 'moving', 'move'], null));
+  if (motion === true) return true;
+  const speed = kmh(position?.speed);
+  return speed >= 3;
+}
+
+function lastPositionDate(position = {}) {
+  const raw = position?.deviceTime || position?.fixTime || position?.serverTime || position?.time;
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function minutesSincePosition(position = {}) {
+  const date = lastPositionDate(position);
+  if (!date) return null;
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+}
+
+function movementState(device = {}, position = {}) {
+  if (!position || typeof position !== 'object') return 'no-position';
+  if (isMoving(device, position)) return 'moving';
+  const idleMinutes = minutesSincePosition(position);
+  if (isIgnitionOn(device, position) && idleMinutes !== null && idleMinutes >= 3) return 'idle';
+  return 'stopped';
+}
+
+function movementLabel(state) {
+  if (state === 'moving') return 'Em movimento';
+  if (state === 'idle') return 'Ocioso';
+  if (state === 'stopped') return 'Parado';
+  return 'Sem posição';
+}
+
+function movementTone(state) {
+  if (state === 'moving') return 'good';
+  if (state === 'idle') return 'info';
+  if (state === 'stopped') return 'bad';
+  return 'warn';
+}
+
+function formatVoltage(value) {
+  const n = numberOrNull(value);
+  if (n === null) return '-';
+  const volts = n > 1000 ? n / 1000 : n;
+  return `${volts.toFixed(volts >= 10 ? 1 : 2)} V`;
+}
+
+function batteryPercent(device = {}, position = {}) {
+  return telemetryAttr(device, position, ['batteryLevel', 'battery', 'batteryPercent', 'batteryPercentage', 'power'], null);
+}
+
+function vehicleVoltage(device = {}, position = {}) {
+  return telemetryAttr(device, position, ['power', 'externalPower', 'voltage', 'vehicleVoltage', 'batteryVoltage', 'inputVoltage', 'io66', 'io67'], null);
+}
+
 function safeCourse(value) {
   const n = numberOrNull(value);
   if (n === null) return 0;
@@ -364,11 +461,7 @@ function isValidPosition(position = {}) {
 
 function getLatLng(position = {}) {
   if (!isValidPosition(position)) return null;
-
-  return [
-    Number(position.latitude),
-    Number(position.longitude)
-  ];
+  return [Number(position.latitude), Number(position.longitude)];
 }
 
 function getDevicePosition(device = {}, positions = []) {
@@ -441,19 +534,24 @@ function latestAlertForDevice(device = {}, events = []) {
 }
 
 function createVehicleIcon(device = {}, position = {}) {
-  const category = detectVehicleCategory(device, position);
-  const course = safeCourse(position.course);
+  const safePosition = position && typeof position === 'object' ? position : {};
+  const category = detectVehicleCategory(device, safePosition);
+  const course = safeCourse(safePosition.course);
+  const state = movementState(device, safePosition);
   const status = String(device.status || 'unknown').toLowerCase();
-  const src = hasVehicleImage(device, position) ? getVehiclePhoto(device, position) : ICONS.default[0];
+  const src = getVehiclePhoto(device, safePosition) || vehicleImage(category);
+  const title = `${getVehicleName(device)} · ${movementLabel(state)} · ${formatSpeed(safePosition.speed)}`;
+
   return L.divIcon({
     className: '',
-    iconSize: [52, 52],
-    iconAnchor: [26, 26],
-    popupAnchor: [0, -22],
+    iconSize: [64, 64],
+    iconAnchor: [32, 32],
+    popupAnchor: [0, -28],
     html: `
-      <div class="vehicle-icon" title="${escapeHtml(getVehicleName(device))}" style="transform: rotate(${course}deg)">
-        <img src="${escapeHtml(src)}" alt="${escapeHtml(vehicleMapLabel(category))}" />
-        <span class="status-dot status-${escapeHtml(status)}" style="position:absolute; right:3px; bottom:5px; border:2px solid #020617"></span>
+      <div class="vehicle-icon modern-vehicle-marker movement-${escapeHtml(state)} status-${escapeHtml(status)}" title="${escapeHtml(title)}">
+        <div class="vehicle-icon-ring"></div>
+        <img class="vehicle-icon-img" src="${escapeHtml(src)}" alt="${escapeHtml(vehicleMapLabel(category))}" style="transform: rotate(${course}deg)" />
+        <span class="vehicle-icon-status"></span>
       </div>
     `
   });
@@ -481,14 +579,36 @@ function usePolling(callback, delayMs, enabled = true) {
 
 function PopupMetric({ icon, label, value }) {
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+    <div className="popup-mini-line">
       {icon}
       <small><b>{label}:</b> {value}</small>
     </div>
   );
 }
 
-function Info({ label, value }) {
+function TelemetryTile({ icon, label, value, tone = 'info' }) {
+  return (
+    <div className={`telemetry-tile ${tone}`}>
+      <span className="telemetry-icon">{icon}</span>
+      <span>
+        <small>{label}</small>
+        <b>{value ?? '-'}</b>
+      </span>
+    </div>
+  );
+}
+
+function Speedometer({ speed }) {
+  return (
+    <div className="speedometer">
+      <Gauge size={20} />
+      <strong>{speed}</strong>
+      <small>km/h</small>
+    </div>
+  );
+}
+
+function Infofunction Infofunction Info({ label, value }) {
   return (
     <div className="row">
       <small>{label}</small>
@@ -524,7 +644,7 @@ function MapAutoFit({ positions, enabled = true }) {
       map.setView(points[0], 15, { animate: true });
       return;
     }
-    map.fitBounds(points, { padding: [34, 34], maxZoom: 16 });
+    map.fitBounds(points, { padding: [46, 46], maxZoom: 16 });
   }, [enabled, map, positions]);
   return null;
 }
@@ -533,25 +653,64 @@ const VehicleMarker = memo(function VehicleMarker({ item }) {
   const { device, position, event, category } = item;
   const latLng = getLatLng(position);
   if (!latLng) return null;
+
+  const attrs = getPositionAttributes(position);
+  const state = movementState(device, position);
+  const speed = kmh(position.speed);
+  const blocked = isBlocked(device, position);
+  const ignition = isIgnitionOn(device, position);
+  const battery = batteryPercent(device, position);
+  const voltage = vehicleVoltage(device, position);
+  const last = position.deviceTime || position.fixTime || position.serverTime;
+  const idleMinutes = minutesSincePosition(position);
+  const plate = getVehiclePlate(device) || getVehicleUniqueId(device) || vehicleMapLabel(category);
+
   return (
     <Marker position={latLng} icon={createVehicleIcon(device, position)}>
       <Popup>
-        <div style={{ minWidth: 230 }}>
-          <b>{getVehicleName(device)}</b>
-          <br />
-          <small>{getVehiclePlate(device) || getVehicleUniqueId(device) || vehicleMapLabel(category)}</small>
-          <PopupMetric icon={<Gauge size={15} />} label="Velocidade" value={formatSpeed(position.speed)} />
-          <PopupMetric icon={<Route size={15} />} label="Curso" value={`${safeCourse(position.course)}°`} />
-          <PopupMetric icon={<Battery size={15} />} label="Bateria" value={formatBattery(getAttr(position, ['batteryLevel', 'battery'], null))} />
-          <PopupMetric icon={<AlertTriangle size={15} />} label="Alerta" value={alertText(event, position)} />
-          <PopupMetric icon={<LocateFixed size={15} />} label="Atualização" value={timeAgo(position.deviceTime || position.fixTime || position.serverTime)} />
+        <div className="vehicle-popup">
+          <div className="vehicle-popup-header">
+            <div>
+              <b>{getVehicleName(device)}</b>
+              <small>{plate}</small>
+            </div>
+            <Badge tone={movementTone(state)}>{movementLabel(state)}</Badge>
+          </div>
+
+          <div className="popup-speed-row">
+            <Speedometer speed={speed} />
+            <div className="popup-status-stack">
+              <TelemetryTile icon={blocked ? <Lock size={15} /> : <Unlock size={15} />} label="Bloqueio" value={blocked ? 'Bloqueado' : 'Liberado'} tone={blocked ? 'bad' : 'good'} />
+              <TelemetryTile icon={<KeyRound size={15} />} label="Ignição" value={ignition ? 'Ligada' : 'Desligada'} tone={ignition ? 'good' : 'bad'} />
+            </div>
+          </div>
+
+          <div className="telemetry-grid">
+            <TelemetryTile icon={<BatteryCharging size={15} />} label="Bateria" value={formatBattery(battery)} tone="info" />
+            <TelemetryTile icon={<Zap size={15} />} label="Voltagem" value={formatVoltage(voltage)} tone="info" />
+            <TelemetryTile icon={<Navigation size={15} />} label="Curso" value={`${safeCourse(position.course)}°`} tone="info" />
+            <TelemetryTile icon={<Clock3 size={15} />} label="Atualização" value={timeAgo(last)} tone="warn" />
+          </div>
+
+          {state === 'idle' && (
+            <div className="idle-alert">
+              <TimerReset size={16} />
+              Veículo ligado e parado há pelo menos {idleMinutes || 3} min.
+            </div>
+          )}
+
+          <div className="popup-footer">
+            <PopupMetric icon={<Power size={14} />} label="Status Traccar" value={statusLabel(device.status)} />
+            <PopupMetric icon={<AlertTriangle size={14} />} label="Alerta" value={alertText(event, position)} />
+            {attrs.sat || attrs.satellites ? <PopupMetric icon={<LocateFixed size={14} />} label="Satélites" value={attrs.sat || attrs.satellites} /> : null}
+          </div>
         </div>
       </Popup>
     </Marker>
   );
 });
 
-class ErrorBoundary extends React.Component {
+class ErrorBoundaryclass ErrorBoundaryclass ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
@@ -579,18 +738,22 @@ class ErrorBoundary extends React.Component {
 function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, search, setSearch, statusFilter, setStatusFilter }) {
   const validPositions = items.map((item) => item?.position).filter(isValidPosition);
   const layer = MAP_LAYERS[layerKey] || MAP_LAYERS.osm;
+  const moving = items.filter(({ device, position }) => movementState(device, position) === 'moving').length;
+  const idle = items.filter(({ device, position }) => movementState(device, position) === 'idle').length;
+  const stopped = items.filter(({ device, position }) => movementState(device, position) === 'stopped').length;
+
   return (
     <>
-      <div className="card-grid">
+      <div className="card-grid modern-card-grid">
         <StatCard icon={<Car size={22} />} label="Veículos" value={stats.total} hint="Total carregado do Traccar" />
-        <StatCard icon={<Wifi size={22} />} label="Online" value={stats.online} hint="Com status conectado" />
-        <StatCard icon={<WifiOff size={22} />} label="Offline" value={stats.offline} hint="Sem conexão ativa" />
-        <StatCard icon={<AlertTriangle size={22} />} label="Alertas 24h" value={stats.events} hint="Eventos recentes" />
+        <StatCard icon={<Navigation size={22} />} label="Movimento" value={moving} hint="Carro verde no mapa" />
+        <StatCard icon={<TimerReset size={22} />} label="Ociosos" value={idle} hint="Ligado e parado +3 min" />
+        <StatCard icon={<Power size={22} />} label="Parados" value={stopped} hint="Carro vermelho no mapa" />
       </div>
 
-      <div className="layout">
-        <section className="panel">
-          <div className="actions" style={{ marginBottom: 12, justifyContent: 'space-between' }}>
+      <div className="layout map-dashboard-layout">
+        <section className="panel map-stage-panel">
+          <div className="map-toolbar">
             <div className="actions">
               <select value={layerKey} onChange={(event) => setLayerKey(event.target.value)} aria-label="Camada do mapa">
                 {Object.entries(MAP_LAYERS).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
@@ -602,37 +765,42 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
             <Badge tone="info"><Layers size={14} /> {layer.description}</Badge>
           </div>
 
-          <div className="map-wrap">
+          <div className="map-wrap full-background-map">
             <MapContainer center={getLatLng(validPositions[0]) || DEFAULT_CENTER} zoom={12} scrollWheelZoom>
               <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
               <MapAutoFit positions={validPositions} enabled={fitMap} />
               {items.map((item) => <VehicleMarker key={item.device.id} item={item} />)}
             </MapContainer>
           </div>
-        </section>
 
-        <section className="panel">
-          <h3>Frota em tempo real</h3>
-          <div className="actions" style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-              <Search size={16} />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar veículo, placa ou ID" style={{ width: '100%' }} />
+          <section className="panel fleet-overlay-panel">
+            <h3>Frota em tempo real</h3>
+            <div className="actions fleet-search-actions">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                <Search size={16} />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar veículo, placa ou ID" style={{ width: '100%' }} />
+              </div>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="all">Todos</option>
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+                <option value="unknown">Indefinido</option>
+              </select>
             </div>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-              <option value="all">Todos</option>
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-              <option value="unknown">Indefinido</option>
-            </select>
-          </div>
-          <VehicleList items={items} />
+            <div className="movement-legend">
+              <span><i className="legend-dot moving"></i> Movimento</span>
+              <span><i className="legend-dot stopped"></i> Parado</span>
+              <span><i className="legend-dot idle"></i> Ocioso</span>
+            </div>
+            <VehicleList items={items} />
+          </section>
         </section>
       </div>
     </>
   );
 }
 
-function VehicleList({ items, compact = false }) {
+function VehicleListfunction VehicleListfunction VehicleList({ items, compact = false }) {
   if (!items.length) return <div className="warn-box">Nenhum veículo encontrado com os filtros atuais.</div>;
   return (
     <div className="list">
@@ -648,7 +816,7 @@ function VehicleList({ items, compact = false }) {
               </div>
               <Badge tone={statusClass(device.status)}>{statusLabel(device.status)}</Badge>
             </div>
-            <small>{position ? `${formatSpeed(position.speed)} · ${timeAgo(last)} · ${formatDate(last)}` : 'Sem posição recente'}</small>
+            <small>{position ? `${movementLabel(movementState(device, position))} · ${formatSpeed(position.speed)} · ${timeAgo(last)} · ${formatDate(last)}` : 'Sem posição recente'}</small>
             {!compact && <small>{alertText(event, position || {})}</small>}
           </div>
         );
