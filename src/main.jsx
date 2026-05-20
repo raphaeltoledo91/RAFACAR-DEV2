@@ -737,7 +737,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, search, setSearch, statusFilter, setStatusFilter }) {
+function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, search, setSearch, statusFilter, setStatusFilter, fleetPanelHidden, setFleetPanelHidden }) {
   const validPositions = items.map((item) => item?.position).filter(isValidPosition);
   const layer = MAP_LAYERS[layerKey] || MAP_LAYERS.osm;
   const moving = items.filter(({ device, position }) => movementState(device, position) === 'moving').length;
@@ -763,6 +763,9 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
               <button className="ghost-btn" onClick={() => setFitMap((v) => !v)} title="Centralizar mapa">
                 <MapPinned size={17} /> {fitMap ? 'Auto-fit ligado' : 'Auto-fit desligado'}
               </button>
+              <button className="ghost-btn" onClick={() => setFleetPanelHidden((value) => !value)} title={fleetPanelHidden ? 'Mostrar lista lateral da frota' : 'Esconder lista lateral da frota'}>
+                <Car size={17} /> {fleetPanelHidden ? 'Mostrar frota' : 'Esconder frota'}
+              </button>
             </div>
             <Badge tone="info"><Layers size={14} /> {layer.description}</Badge>
           </div>
@@ -775,8 +778,24 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
             </MapContainer>
           </div>
 
-          <section className="panel fleet-overlay-panel">
-            <h3>Frota em tempo real</h3>
+          {fleetPanelHidden && (
+            <div className="map-side-icon-column" aria-label="Painel de frota recolhido">
+              <button type="button" title="Mostrar frota" aria-label="Mostrar frota" onClick={() => setFleetPanelHidden(false)}>
+                <Car size={19} />
+              </button>
+              <button type="button" title="Centralizar veículos" aria-label="Centralizar veículos" onClick={() => setFitMap((value) => !value)}>
+                <MapPinned size={19} />
+              </button>
+            </div>
+          )}
+
+          <section className={`panel fleet-overlay-panel ${fleetPanelHidden ? 'is-hidden' : ''}`}>
+            <div className="fleet-overlay-header">
+              <h3>Frota em tempo real</h3>
+              <button className="icon-only-btn" type="button" title="Esconder frota" onClick={() => setFleetPanelHidden(true)}>
+                ×
+              </button>
+            </div>
             <div className="actions fleet-search-actions">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                 <Search size={16} />
@@ -1100,6 +1119,8 @@ function App() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [fitMap, setFitMap] = useState(true);
   const [layerKey, setLayerKey] = useState(() => localStorage.getItem('traccar-dev-map-layer') || 'googleHybrid');
+  const [sidebarHidden, setSidebarHidden] = useState(() => localStorage.getItem('rafacar-sidebar-hidden') === 'true');
+  const [fleetPanelHidden, setFleetPanelHidden] = useState(() => localStorage.getItem('rafacar-fleet-panel-hidden') === 'true');
 
   useEffect(() => { localStorage.setItem('traccar-dev-map-layer', layerKey); }, [layerKey]);
 
@@ -1167,7 +1188,8 @@ function App() {
   if (!auth.authenticated) return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
+      {!sidebarHidden && (
       <aside className="sidebar">
         <div className="brand">
           <div className="logo">RF</div>
@@ -1188,6 +1210,33 @@ function App() {
           <Badge tone="info"><Activity size={14} /> {lastUpdate ? `Atualizado ${formatTime(lastUpdate)}` : 'Sem atualização'}</Badge>
         </div>
       </aside>
+      )}
+
+      {sidebarHidden && (
+        <div className="floating-icon-rail" aria-label="Menu recolhido">
+          <button className="rail-toggle" type="button" title="Mostrar menu lateral" onClick={() => setSidebarHidden(false)}>
+            ☰
+          </button>
+          {tabs.map(([key, label, Icon]) => (
+            <button
+              key={key}
+              type="button"
+              title={label}
+              aria-label={label}
+              className={activeTab === key ? 'active' : ''}
+              onClick={() => setActiveTab(key)}
+            >
+              <Icon size={19} />
+            </button>
+          ))}
+          <button type="button" title="Atualizar" aria-label="Atualizar" onClick={() => loadData({ silent: true })} disabled={refreshing}>
+            <RefreshCw size={19} />
+          </button>
+          <button type="button" title="Sair" aria-label="Sair" className="danger" onClick={handleLogout}>
+            <LogOut size={19} />
+          </button>
+        </div>
+      )}
 
       <main className="main">
         <div className="topbar">
@@ -1196,6 +1245,9 @@ function App() {
             <p>{subtitle}</p>
           </div>
           <div className="actions">
+            <button className="ghost-btn sidebar-control-btn" onClick={() => setSidebarHidden((value) => !value)} title={sidebarHidden ? 'Mostrar menu lateral' : 'Esconder menu lateral'}>
+              <Layers size={17} /> {sidebarHidden ? 'Mostrar menu' : 'Esconder menu'}
+            </button>
             <button className="ghost-btn" onClick={() => setTheme(theme === 'dark' ? 'dark' : 'dark')} title="Tema fixado em modo escuro">
               <Settings size={17} /> Tema seguro
             </button>
@@ -1221,6 +1273,8 @@ function App() {
             setSearch={setSearch}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            fleetPanelHidden={fleetPanelHidden}
+            setFleetPanelHidden={setFleetPanelHidden}
           />
         )}
         {activeTab === 'veiculos' && <VehiclesPage items={filteredItems} />}
