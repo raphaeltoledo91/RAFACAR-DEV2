@@ -811,3 +811,227 @@ body { background: radial-gradient(circle at 12% 8%, rgba(56, 189, 248, .20), tr
 
 /* RAFACAR SVG ROUTE PATCH END */
 
+/* RAFACAR BRAND FINAL PATCH START */
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f8fafc;
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel-2: rgba(241, 245, 249, 0.92);
+  --text: #0f172a;
+  --muted: #475569;
+  --line: rgba(15, 23, 42, 0.14);
+  --green: #16a34a;
+  --red: #dc0012;
+  --yellow: #ca8a04;
+  --blue: #0284c7;
+  --shadow: 0 20px 54px rgba(15, 23, 42, 0.12);
+  --glass: rgba(255, 255, 255, .72);
+  --glass-strong: rgba(255, 255, 255, .90);
+  --accent-moving: #16a34a;
+  --accent-stopped: #dc0012;
+  --accent-idle: #0284c7;
+  --accent-unknown: #ca8a04;
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(220, 0, 18, .10), transparent 32%),
+    radial-gradient(circle at 78% 18%, rgba(2, 132, 199, .12), transparent 30%),
+    linear-gradient(180deg, #ffffff, #f1f5f9);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .sidebar,
+:root[data-theme="light"] .login-card,
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .row,
+:root[data-theme="light"] .reports-results,
+:root[data-theme="light"] .fleet-overlay-panel {
+  background: rgba(255, 255, 255, .88);
+  color: var(--text);
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] .nav button,
+:root[data-theme="light"] .ghost-btn {
+  background: rgba(255, 255, 255, .86);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .leaflet-popup-content-wrapper,
+:root[data-theme="light"] .leaflet-popup-tip {
+  background: rgba(255, 255, 255, .96) !important;
+  color: var(--text) !important;
+}
+
+.brand-company {
+  display: grid;
+  gap: 9px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.brand-user {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brand-logo-block {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.brand-logo-mark {
+  display: block;
+  width: min(100%, 238px);
+  line-height: 0;
+}
+
+.login-card .brand-logo-mark {
+  width: min(100%, 310px);
+  margin: 0 auto;
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .22));
+}
+
+.logo-light-only {
+  display: none;
+}
+
+.logo-dark-only {
+  display: block;
+}
+
+:root[data-theme="light"] .logo-light-only {
+  display: block;
+}
+
+:root[data-theme="light"] .logo-dark-only {
+  display: none;
+}
+
+.brand-logo-text {
+  display: grid;
+  gap: 2px;
+}
+
+.brand-logo-text strong {
+  color: var(--text);
+  font-size: 15px;
+  letter-spacing: .055em;
+  line-height: 1.1;
+}
+
+.brand-logo-text small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.login-brand {
+  display: grid;
+  gap: 9px;
+  justify-items: center;
+  text-align: center;
+}
+
+.login-brand-subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.whatsapp-support {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 43px;
+  border: 1px solid rgba(34, 197, 94, .36);
+  border-radius: 16px;
+  padding: 9px 12px;
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, .13);
+  text-decoration: none;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.whatsapp-support:hover {
+  transform: translateY(-1px);
+  border-color: rgba(34, 197, 94, .68);
+  background: rgba(22, 163, 74, .20);
+}
+
+.whatsapp-support span {
+  display: grid;
+  gap: 1px;
+  line-height: 1.12;
+}
+
+.whatsapp-support b {
+  font-size: 12px;
+}
+
+.whatsapp-support small {
+  color: currentColor;
+  opacity: .82;
+  font-size: 11px;
+}
+
+.whatsapp-support.compact {
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.sidebar-support-row {
+  margin-top: 14px;
+}
+
+.sidebar-support-row .whatsapp-support {
+  width: 100%;
+}
+
+.login-support-row {
+  margin-top: 16px;
+  display: grid;
+  justify-items: center;
+}
+
+:root[data-theme="light"] .whatsapp-support {
+  color: #166534;
+  background: rgba(22, 163, 74, .10);
+  border-color: rgba(22, 163, 74, .30);
+}
+
+.theme-toggle-btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .brand-logo-mark {
+    width: min(100%, 210px);
+  }
+
+  .login-card .brand-logo-mark {
+    width: min(100%, 260px);
+  }
+
+  .whatsapp-support.compact span {
+    display: none;
+  }
+}
+
+/* RAFACAR BRAND FINAL PATCH END */
+

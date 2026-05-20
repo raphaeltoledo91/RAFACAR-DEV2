@@ -1443,6 +1443,46 @@ function applyFilters(items, search, statusFilter) {
 }
 
 
+
+const WHATSAPP_SUPPORT_NUMBER = '17-99609-8315';
+const WHATSAPP_SUPPORT_URL = 'https://wa.me/5517996098315';
+
+function WhatsAppIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false" className="whatsapp-svg-icon">
+      <path fill="currentColor" d="M16.04 3C9.02 3 3.32 8.58 3.32 15.45c0 2.2.6 4.35 1.73 6.22L3 29l7.55-1.93a12.96 12.96 0 0 0 5.49 1.22c7.02 0 12.73-5.58 12.73-12.45S23.06 3 16.04 3Zm0 22.97c-1.8 0-3.55-.46-5.1-1.34l-.37-.21-4.48 1.15 1.2-4.25-.25-.39a10.04 10.04 0 0 1-1.56-5.48c0-5.59 4.74-10.14 10.56-10.14 5.83 0 10.57 4.55 10.57 10.14 0 5.98-4.74 10.52-10.57 10.52Zm5.78-7.57c-.32-.16-1.88-.91-2.17-1.01-.3-.11-.51-.16-.72.16-.21.31-.82 1.01-1 1.22-.18.21-.37.24-.69.08-.32-.16-1.35-.49-2.58-1.55-.95-.84-1.6-1.87-1.79-2.18-.18-.32-.02-.49.14-.65.14-.14.32-.37.48-.55.16-.19.21-.32.32-.53.11-.21.05-.4-.03-.55-.08-.16-.72-1.7-.98-2.33-.26-.61-.52-.53-.72-.54h-.61c-.21 0-.55.08-.84.4-.29.32-1.1 1.06-1.1 2.58s1.13 2.99 1.29 3.2c.16.21 2.23 3.34 5.4 4.68.75.32 1.34.51 1.8.65.76.24 1.45.21 1.99.13.61-.09 1.88-.75 2.14-1.48.26-.73.26-1.36.18-1.49-.08-.13-.29-.21-.61-.37Z"/>
+    </svg>
+  );
+}
+
+function BrandLogo({ compact = false }) {
+  return (
+    <div className={`brand-logo-block ${compact ? 'compact' : ''}`}>
+      <span className="brand-logo-mark" aria-label="RAFACAR RASTREADORES">
+        <img className="brand-logo-img logo-light-only" src="/brand/rafacar-logo-light.png" alt="RAFACAR RASTREADORES" />
+        <img className="brand-logo-img logo-dark-only" src="/brand/rafacar-logo-dark.png" alt="RAFACAR RASTREADORES" />
+      </span>
+      <span className="brand-logo-text">
+        <strong>RAFACAR RASTREADORES</strong>
+        <small>Rastreamento veicular inteligente</small>
+      </span>
+    </div>
+  );
+}
+
+function SupportWhatsapp({ compact = false }) {
+  return (
+    <a className={`whatsapp-support ${compact ? 'compact' : ''}`} href={WHATSAPP_SUPPORT_URL} target="_blank" rel="noreferrer" title="Suporte 24 horas via WhatsApp">
+      <WhatsAppIcon size={compact ? 17 : 20} />
+      <span>
+        <b>Suporte 24 Horas</b>
+        <small>WhatsApp {WHATSAPP_SUPPORT_NUMBER}</small>
+      </span>
+    </a>
+  );
+}
+
+
 function LoginPage({ onLogin }) {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -1458,19 +1498,20 @@ function LoginPage({ onLogin }) {
   };
   return (
     <div className="login-shell"><div className="login-card">
-      <div className="login-brand"><div className="logo">RF</div><div><h1>RAFACAR DEV2</h1><p>Entre usando as credenciais do Traccar</p></div></div>
+      <div className="login-brand"><BrandLogo /><p className="login-brand-subtitle">Entre usando as credenciais do Traccar</p></div>
       <form onSubmit={submit} className="login-form">
         <label><small>Usuário ou e-mail Traccar</small><input value={login} onChange={(event) => setLogin(event.target.value)} autoComplete="username" placeholder="usuario@empresa.com ou login" required /></label>
         <label><small>Senha Traccar</small><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Digite sua senha" required /></label>
         {error && <div className="error-box"><b>Login não autorizado:</b> {error}</div>}
         <button className="primary-btn login-submit" disabled={busy} type="submit"><KeyRound size={18} /> {busy ? 'Validando no Traccar...' : 'Entrar no painel'}</button>
       </form>
+      <div className="login-support-row"><SupportWhatsapp /></div>
       <div className="login-security"><ShieldCheck size={16} /><span>Sua senha é enviada somente ao backend local, que autentica no Traccar e guarda a sessão em cookie HttpOnly.</span></div>
     </div></div>
   );
 }
 function AuthLoading() {
-  return <div className="login-shell"><div className="login-card compact"><div className="login-brand"><div className="logo">RF</div><div><h1>RAFACAR DEV2</h1><p>Verificando sessão segura...</p></div></div></div></div>;
+  return <div className="login-shell"><div className="login-card compact"><div className="login-brand"><BrandLogo /><p className="login-brand-subtitle">Verificando sessão segura...</p></div></div></div>;
 }
 
 function App() {
@@ -1565,12 +1606,9 @@ function App() {
     <div className={`app-shell ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
       {!sidebarHidden && (
       <aside className="sidebar">
-        <div className="brand">
-          <div className="logo">RF</div>
-          <div>
-            <h1>RAFACAR DEV2</h1>
-            <span>{auth.user?.name || auth.user?.email || 'Usuário Traccar'}</span>
-          </div>
+        <div className="brand brand-company">
+          <BrandLogo compact />
+          <span className="brand-user">{auth.user?.name || auth.user?.email || 'Usuário Traccar'}</span>
         </div>
         <nav className="nav">
           {tabs.map(([key, label, Icon]) => (
@@ -1583,6 +1621,7 @@ function App() {
           <Badge tone={health?.ok ? 'good' : 'warn'}><ShieldCheck size={14} /> Proxy {health?.ok ? 'OK' : 'verificando'}</Badge>
           <Badge tone="info"><Activity size={14} /> {lastUpdate ? `Atualizado ${formatTime(lastUpdate)}` : 'Sem atualização'}</Badge>
         </div>
+        <div className="sidebar-support-row"><SupportWhatsapp compact /></div>
       </aside>
       )}
 
@@ -1622,9 +1661,10 @@ function App() {
             <button className="ghost-btn sidebar-control-btn" onClick={() => setSidebarHidden((value) => !value)} title={sidebarHidden ? 'Mostrar menu lateral' : 'Esconder menu lateral'}>
               <Layers size={17} /> {sidebarHidden ? 'Mostrar menu' : 'Esconder menu'}
             </button>
-            <button className="ghost-btn" onClick={() => setTheme(theme === 'dark' ? 'dark' : 'dark')} title="Tema fixado em modo escuro">
-              <Settings size={17} /> Tema seguro
+            <button className="ghost-btn theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}>
+              <Settings size={17} /> {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
             </button>
+            <SupportWhatsapp compact />
             <button className="primary-btn" onClick={() => loadData({ silent: true })} disabled={refreshing}>
               <RefreshCw size={17} /> {refreshing ? 'Atualizando...' : 'Atualizar'}
             </button>
