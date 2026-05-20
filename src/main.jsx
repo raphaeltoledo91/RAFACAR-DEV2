@@ -608,7 +608,7 @@ function Speedometer({ speed }) {
   );
 }
 
-function Infofunction Infofunction Info({ label, value }) {
+function Info({ label, value }) {
   return (
     <div className="row">
       <small>{label}</small>
@@ -710,7 +710,7 @@ const VehicleMarker = memo(function VehicleMarker({ item }) {
   );
 });
 
-class ErrorBoundaryclass ErrorBoundaryclass ErrorBoundary extends React.Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
@@ -800,7 +800,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
   );
 }
 
-function VehicleListfunction VehicleListfunction VehicleList({ items, compact = false }) {
+function VehicleList({ items, compact = false }) {
   if (!items.length) return <div className="warn-box">Nenhum veículo encontrado com os filtros atuais.</div>;
   return (
     <div className="list">
