@@ -536,29 +536,106 @@ function latestAlertForDevice(device = {}, events = []) {
     .sort((a, b) => new Date(eventTime(b) || 0) - new Date(eventTime(a) || 0))[0] || null;
 }
 
+function vehicleSvgBody(category) {
+  const body = {
+    motorcycle: `
+      <path class="vehicle-svg-shadow" d="M22 38h26" />
+      <path class="vehicle-svg-stroke" d="M25 39l7-11h9l6 11M31 28l4-8 6 8" />
+      <circle class="vehicle-svg-wheel" cx="24" cy="42" r="5" />
+      <circle class="vehicle-svg-wheel" cx="48" cy="42" r="5" />
+      <path class="vehicle-svg-fill" d="M34 20h9l4 8h-17z" />
+    `,
+    truck: `
+      <path class="vehicle-svg-fill" d="M18 24h30v26H18zM48 32h10l6 8v10H48z" />
+      <path class="vehicle-svg-window" d="M51 35h6l3 5h-9z" />
+      <circle class="vehicle-svg-wheel" cx="27" cy="52" r="4" />
+      <circle class="vehicle-svg-wheel" cx="54" cy="52" r="4" />
+    `,
+    bus: `
+      <rect class="vehicle-svg-fill" x="15" y="22" width="40" height="29" rx="7" />
+      <path class="vehicle-svg-window" d="M20 27h30v10H20z" />
+      <circle class="vehicle-svg-wheel" cx="25" cy="52" r="4" />
+      <circle class="vehicle-svg-wheel" cx="47" cy="52" r="4" />
+    `,
+    van: `
+      <path class="vehicle-svg-fill" d="M17 27h30l9 9v14H17z" />
+      <path class="vehicle-svg-window" d="M23 31h20l6 6H23z" />
+      <circle class="vehicle-svg-wheel" cx="27" cy="51" r="4" />
+      <circle class="vehicle-svg-wheel" cx="48" cy="51" r="4" />
+    `,
+    pickup: `
+      <path class="vehicle-svg-fill" d="M17 31h22l5-8h12v27H17z" />
+      <path class="vehicle-svg-window" d="M42 27h9v9H37z" />
+      <path class="vehicle-svg-bed" d="M19 34h17v10H19z" />
+      <circle class="vehicle-svg-wheel" cx="27" cy="51" r="4" />
+      <circle class="vehicle-svg-wheel" cx="50" cy="51" r="4" />
+    `,
+    tractor: `
+      <circle class="vehicle-svg-wheel" cx="24" cy="46" r="9" />
+      <circle class="vehicle-svg-wheel" cx="50" cy="48" r="5" />
+      <path class="vehicle-svg-fill" d="M28 33h18l4 11H26zM35 22h10v11H35z" />
+    `,
+    person: `
+      <circle class="vehicle-svg-fill" cx="35" cy="23" r="8" />
+      <path class="vehicle-svg-stroke" d="M35 31v20M24 39h22M29 62l6-11 6 11" />
+    `,
+    animal: `
+      <path class="vehicle-svg-fill" d="M23 39c0-9 7-15 16-15 8 0 15 5 15 13 0 10-8 17-17 17-8 0-14-6-14-15z" />
+      <circle class="vehicle-svg-eye" cx="42" cy="35" r="2" />
+      <path class="vehicle-svg-stroke" d="M27 27l-6-7M47 27l7-7M27 52l-5 8M47 52l5 8" />
+    `,
+    default: `
+      <path class="vehicle-svg-fill" d="M20 29l8-10h14l8 10 5 21H15z" />
+      <path class="vehicle-svg-window" d="M29 23h12l5 8H24z" />
+      <circle class="vehicle-svg-wheel" cx="25" cy="51" r="4" />
+      <circle class="vehicle-svg-wheel" cx="45" cy="51" r="4" />
+    `
+  };
+
+  if (['motorcycle', 'scooter', 'bicycle'].includes(category)) return body.motorcycle;
+  if (['truck', 'truckHorse', 'caminhao', 'crane'].includes(category)) return body.truck;
+  if (['bus'].includes(category)) return body.bus;
+  if (['van'].includes(category)) return body.van;
+  if (['pickup', 'utility', 'offroad'].includes(category)) return body.pickup;
+  if (['tractor'].includes(category)) return body.tractor;
+  if (['person'].includes(category)) return body.person;
+  if (['animal'].includes(category)) return body.animal;
+  return body.default;
+}
+
+function vehicleSvgMarkup(category, state, status, course, title, label) {
+  return `
+    <div class="vehicle-svg-marker movement-${escapeHtml(state)} status-${escapeHtml(status)}" title="${escapeHtml(title)}">
+      <div class="vehicle-svg-pulse"></div>
+      <svg class="vehicle-svg-core" viewBox="0 0 70 70" role="img" aria-label="${escapeHtml(title)}" style="transform: rotate(${safeCourse(course)}deg)">
+        <circle class="vehicle-svg-halo" cx="35" cy="35" r="32"></circle>
+        <path class="vehicle-svg-heading" d="M35 3l8 16-8-4-8 4z"></path>
+        <g class="vehicle-svg-body">${vehicleSvgBody(category)}</g>
+      </svg>
+      <span class="vehicle-svg-status"></span>
+      <span class="vehicle-svg-label">${escapeHtml(label)}</span>
+    </div>
+  `;
+}
+
 function createVehicleIcon(device = {}, position = {}) {
   const safePosition = position && typeof position === 'object' ? position : {};
   const category = detectVehicleCategory(device, safePosition);
   const course = safeCourse(safePosition.course);
   const state = movementState(device, safePosition);
   const status = String(device.status || 'unknown').toLowerCase();
-  const src = getVehiclePhoto(device, safePosition) || vehicleImage(category);
-  const title = `${getVehicleName(device)} · ${movementLabel(state)} · ${formatSpeed(safePosition.speed)}`;
+  const title = `${getVehicleName(device)} - ${movementLabel(state)} - ${formatSpeed(safePosition.speed)} - direção ${course}°`;
+  const label = vehicleMapLabel(category);
 
   return L.divIcon({
     className: '',
-    iconSize: [64, 64],
-    iconAnchor: [32, 32],
-    popupAnchor: [0, -28],
-    html: `
-      <div class="vehicle-icon modern-vehicle-marker movement-${escapeHtml(state)} status-${escapeHtml(status)}" title="${escapeHtml(title)}">
-        <div class="vehicle-icon-ring"></div>
-        <img class="vehicle-icon-img" src="${escapeHtml(src)}" alt="${escapeHtml(vehicleMapLabel(category))}" style="transform: rotate(${course}deg)" />
-        <span class="vehicle-icon-status"></span>
-      </div>
-    `
+    iconSize: [74, 74],
+    iconAnchor: [37, 37],
+    popupAnchor: [0, -34],
+    html: vehicleSvgMarkup(category, state, status, course, title, label)
   });
 }
+
 
 function enrichDevices(devices, positions, events) {
   const validEvents = normalizeArray(events);
@@ -637,23 +714,29 @@ function Badge({ tone = 'info', children }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
 
-function MapAutoFit({ positions, enabled = true, singleZoom = 17, maxZoom = 17, padding = [72, 72] }) {
+function MapAutoFit({ positions, enabled = true, singleZoom = 18, maxZoom = 18, padding = [64, 64] }) {
   const map = useMap();
   useEffect(() => {
     if (!enabled || !Array.isArray(positions) || positions.length === 0) return;
     const points = positions.map(getLatLng).filter(Boolean);
     if (!points.length) return;
     if (points.length === 1) {
-      map.setView(points[0], singleZoom, { animate: true });
+      map.flyTo(points[0], singleZoom, { animate: true, duration: 0.75 });
       return;
     }
     map.fitBounds(points, { padding, maxZoom });
+    const timer = setTimeout(() => {
+      if (map.getZoom() < 15) map.setZoom(15, { animate: true });
+    }, 360);
+    return () => clearTimeout(timer);
   }, [enabled, map, positions, singleZoom, maxZoom, padding]);
   return null;
 }
 
+
 const VehicleMarker = memo(function VehicleMarker({ item }) {
   const { device, position, event, category } = item;
+  const map = useMap();
   const latLng = getLatLng(position);
   if (!latLng) return null;
 
@@ -669,7 +752,15 @@ const VehicleMarker = memo(function VehicleMarker({ item }) {
   const plate = getVehiclePlate(device) || getVehicleUniqueId(device) || vehicleMapLabel(category);
 
   return (
-    <Marker position={latLng} icon={createVehicleIcon(device, position)}>
+    <Marker
+      position={latLng}
+      icon={createVehicleIcon(device, position)}
+      eventHandlers={{
+        click: () => {
+          map.flyTo(latLng, 18, { animate: true, duration: 0.75 });
+        }
+      }}
+    >
       <Popup>
         <div className="vehicle-popup">
           <div className="vehicle-popup-header">
@@ -1049,6 +1140,12 @@ function datetimeHoursAgo(hours = 6) {
   return datetimeLocalValue(new Date(Date.now() - hours * 60 * 60 * 1000));
 }
 
+function datetimeStartOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return datetimeLocalValue(date);
+}
+
 function isoFromLocalInput(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return new Date().toISOString();
@@ -1108,20 +1205,27 @@ function downloadCsv(filename, rows = []) {
   return true;
 }
 
-function reportPointIcon(label = 'P', tone = 'info') {
+function reportPointIcon(label = 'P', tone = 'info', course = 0) {
+  const safeLabel = String(label || 'P');
+  const direction = safeCourse(course);
+  const content = safeLabel === '➤'
+    ? `<span class="report-point-arrow" style="transform: rotate(${direction}deg)">➤</span>`
+    : `<span>${escapeHtml(safeLabel)}</span>`;
+
   return L.divIcon({
     className: '',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
     popupAnchor: [0, -18],
-    html: `<div class="report-point-icon ${escapeHtml(tone)}">${escapeHtml(label)}</div>`
+    html: `<div class="report-point-icon ${escapeHtml(tone)}">${content}</div>`
   });
 }
+
 
 function ReportsPage({ items, layerKey }) {
   const firstDeviceId = items[0]?.device?.id ? String(items[0].device.id) : '';
   const [deviceId, setDeviceId] = useState(firstDeviceId);
-  const [from, setFrom] = useState(() => datetimeHoursAgo(6));
+  const [from, setFrom] = useState(() => datetimeStartOfToday());
   const [to, setTo] = useState(() => datetimeLocalValue());
   const [reportType, setReportType] = useState('route');
   const [rows, setRows] = useState([]);
@@ -1134,11 +1238,19 @@ function ReportsPage({ items, layerKey }) {
 
   const selectedDevice = items.find(({ device }) => String(device.id) === String(deviceId))?.device || null;
   const layer = MAP_LAYERS[layerKey] || MAP_LAYERS.googleRoad || MAP_LAYERS.osm;
-  const routePoints = rows.map(getLatLng).filter(Boolean);
+  const validRouteRows = rows.filter(isValidPosition);
+  const routePoints = validRouteRows.map(getLatLng).filter(Boolean);
+  const directionStep = Math.max(1, Math.ceil(validRouteRows.length / 18));
+  const directionRows = validRouteRows.filter((_, index) => (
+    routePoints.length > 2 &&
+    index > 0 &&
+    index < validRouteRows.length - 1 &&
+    index % directionStep === 0
+  ));
   const canQuery = Boolean(deviceId && from && to);
 
-  const runReport = async () => {
-    if (!canQuery) {
+  const queryReport = async ({ nextReportType = reportType, nextFrom = from, nextTo = to, nextDeviceId = deviceId } = {}) => {
+    if (!nextDeviceId || !nextFrom || !nextTo) {
       setMessage('Selecione veículo e período para consultar.');
       return;
     }
@@ -1146,14 +1258,18 @@ function ReportsPage({ items, layerKey }) {
     setBusy(true);
     setMessage('');
     setRows([]);
+    setReportType(nextReportType);
+    setFrom(nextFrom);
+    setTo(nextTo);
+    setDeviceId(String(nextDeviceId));
 
     try {
       const query = new URLSearchParams({
-        deviceId: String(deviceId),
-        from: isoFromLocalInput(from),
-        to: isoFromLocalInput(to)
+        deviceId: String(nextDeviceId),
+        from: isoFromLocalInput(nextFrom),
+        to: isoFromLocalInput(nextTo)
       });
-      const payload = await request(`/api/traccar/reports/${reportType}?${query.toString()}`);
+      const payload = await request(`/api/traccar/reports/${nextReportType}?${query.toString()}`);
       const nextRows = normalizeReportRows(payload);
       setRows(nextRows);
       setMessage(nextRows.length ? `${nextRows.length} registros encontrados.` : 'Nenhum registro encontrado no período.');
@@ -1162,6 +1278,17 @@ function ReportsPage({ items, layerKey }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const runReport = () => queryReport();
+
+  const runTodayRoute = () => {
+    queryReport({
+      nextReportType: 'route',
+      nextFrom: datetimeStartOfToday(),
+      nextTo: datetimeLocalValue(),
+      nextDeviceId: deviceId || firstDeviceId
+    });
   };
 
   const exportRows = () => {
@@ -1173,10 +1300,10 @@ function ReportsPage({ items, layerKey }) {
     <section className="panel reports-panel">
       <div className="reports-header">
         <div>
-          <h3>Relatórios, playback e exportação</h3>
-          <p>Consulte rota/playback por período e exporte os dados em CSV.</p>
+          <h3>Relatórios, playback e trajeto do dia</h3>
+          <p>Consulte rota/playback, visualize o trajeto percorrido no mapa e exporte CSV.</p>
         </div>
-        <Badge tone={rows.length ? 'good' : 'info'}>{rows.length} registros</Badge>
+        <Badge tone={routePoints.length ? 'good' : 'info'}>{routePoints.length} pontos no mapa</Badge>
       </div>
 
       <div className="reports-controls">
@@ -1208,6 +1335,9 @@ function ReportsPage({ items, layerKey }) {
           <input type="datetime-local" value={to} onChange={(event) => setTo(event.target.value)} />
         </label>
         <div className="reports-actions">
+          <button className="primary-btn" onClick={runTodayRoute} disabled={busy || !(deviceId || firstDeviceId)}>
+            <Route size={17} /> Trajeto de hoje
+          </button>
           <button className="primary-btn" onClick={runReport} disabled={busy || !canQuery}>
             <Search size={17} /> {busy ? 'Consultando...' : 'Consultar'}
           </button>
@@ -1223,16 +1353,25 @@ function ReportsPage({ items, layerKey }) {
         <div className="report-map-wrap">
           <MapContainer center={routePoints[0] || DEFAULT_CENTER} zoom={routePoints.length ? 17 : 12} scrollWheelZoom>
             <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
-            <MapAutoFit positions={rows} enabled={Boolean(routePoints.length)} singleZoom={17} maxZoom={17} padding={[58, 58]} />
-            {routePoints.length > 1 && <Polyline positions={routePoints} weight={5} opacity={0.78} />}
+            <MapAutoFit positions={validRouteRows} enabled={Boolean(routePoints.length)} singleZoom={18} maxZoom={18} padding={[54, 54]} />
+            {routePoints.length > 1 && <Polyline positions={routePoints} weight={6} opacity={0.84} className="report-route-line" />}
+            {directionRows.map((row, index) => (
+              <Marker key={`dir-${row.id || row.deviceTime || index}`} position={getLatLng(row)} icon={reportPointIcon('➤', 'info', row.course)}>
+                <Popup>
+                  Direção do trajeto<br />
+                  {formatDate(row.deviceTime || row.fixTime || row.serverTime)}<br />
+                  {formatSpeed(row.speed)}
+                </Popup>
+              </Marker>
+            ))}
             {routePoints[0] && (
               <Marker position={routePoints[0]} icon={reportPointIcon('I', 'good')}>
-                <Popup>Início<br />{formatDate(rows[0]?.deviceTime || rows[0]?.fixTime || rows[0]?.serverTime)}</Popup>
+                <Popup>Início<br />{formatDate(validRouteRows[0]?.deviceTime || validRouteRows[0]?.fixTime || validRouteRows[0]?.serverTime)}</Popup>
               </Marker>
             )}
             {routePoints.length > 1 && (
               <Marker position={routePoints[routePoints.length - 1]} icon={reportPointIcon('F', 'bad')}>
-                <Popup>Fim<br />{formatDate(rows[rows.length - 1]?.deviceTime || rows[rows.length - 1]?.fixTime || rows[rows.length - 1]?.serverTime)}</Popup>
+                <Popup>Fim<br />{formatDate(validRouteRows[validRouteRows.length - 1]?.deviceTime || validRouteRows[validRouteRows.length - 1]?.fixTime || validRouteRows[validRouteRows.length - 1]?.serverTime)}</Popup>
               </Marker>
             )}
           </MapContainer>
@@ -1241,7 +1380,7 @@ function ReportsPage({ items, layerKey }) {
         <div className="reports-results">
           <div className="kv"><span>Veículo</span><b>{selectedDevice ? getVehicleName(selectedDevice) : '-'}</b></div>
           <div className="kv"><span>Período</span><b>{from} até {to}</b></div>
-          <div className="kv"><span>Playback</span><b>{routePoints.length} pontos no mapa</b></div>
+          <div className="kv"><span>Trajeto</span><b>{routePoints.length} pontos válidos</b></div>
           <div className="table-wrap report-table">
             <table>
               <thead>
@@ -1252,7 +1391,7 @@ function ReportsPage({ items, layerKey }) {
                 </tr>
               </thead>
               <tbody>
-                {rows.slice(0, 120).map((row, index) => (
+                {rows.slice(0, 140).map((row, index) => (
                   <tr key={`${row.id || row.deviceTime || index}-${index}`}>
                     <td>{formatDate(row.deviceTime || row.fixTime || row.serverTime)}</td>
                     <td>{formatSpeed(row.speed)}</td>
@@ -1262,7 +1401,7 @@ function ReportsPage({ items, layerKey }) {
               </tbody>
             </table>
           </div>
-          {rows.length > 120 && <small className="muted">Mostrando 120 primeiros registros. A exportação CSV inclui todos os registros carregados.</small>}
+          {rows.length > 140 && <small className="muted">Mostrando 140 primeiros registros. A exportação CSV inclui todos os registros carregados.</small>}
         </div>
       </div>
     </section>
