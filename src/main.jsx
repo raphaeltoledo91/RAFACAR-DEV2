@@ -351,9 +351,24 @@ function getVehiclePhoto(device = {}, position = {}) {
 }
 
 function isValidPosition(position = {}) {
+  if (!position || typeof position !== 'object') return false;
+
   const lat = numberOrNull(position.latitude);
   const lon = numberOrNull(position.longitude);
-  return lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+
+  if (lat === null || lon === null) return false;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+
+  return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+function getLatLng(position = {}) {
+  if (!isValidPosition(position)) return null;
+
+  return [
+    Number(position.latitude),
+    Number(position.longitude)
+  ];
 }
 
 function getDevicePosition(device = {}, positions = []) {
@@ -503,7 +518,7 @@ function MapAutoFit({ positions, enabled = true }) {
   const map = useMap();
   useEffect(() => {
     if (!enabled || !Array.isArray(positions) || positions.length === 0) return;
-    const points = positions.filter(isValidPosition).map((p) => [Number(p.latitude), Number(p.longitude)]);
+    const points = positions.map(getLatLng).filter(Boolean);
     if (!points.length) return;
     if (points.length === 1) {
       map.setView(points[0], 15, { animate: true });
@@ -516,9 +531,10 @@ function MapAutoFit({ positions, enabled = true }) {
 
 const VehicleMarker = memo(function VehicleMarker({ item }) {
   const { device, position, event, category } = item;
-  if (!isValidPosition(position)) return null;
+  const latLng = getLatLng(position);
+  if (!latLng) return null;
   return (
-    <Marker position={[Number(position.latitude), Number(position.longitude)]} icon={createVehicleIcon(device, position)}>
+    <Marker position={latLng} icon={createVehicleIcon(device, position)}>
       <Popup>
         <div style={{ minWidth: 230 }}>
           <b>{getVehicleName(device)}</b>
@@ -561,7 +577,7 @@ class ErrorBoundary extends React.Component {
 }
 
 function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, search, setSearch, statusFilter, setStatusFilter }) {
-  const validPositions = items.map((item) => item.position).filter(isValidPosition);
+  const validPositions = items.map((item) => item?.position).filter(isValidPosition);
   const layer = MAP_LAYERS[layerKey] || MAP_LAYERS.osm;
   return (
     <>
@@ -587,7 +603,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
           </div>
 
           <div className="map-wrap">
-            <MapContainer center={validPositions[0] ? [Number(validPositions[0].latitude), Number(validPositions[0].longitude)] : DEFAULT_CENTER} zoom={12} scrollWheelZoom>
+            <MapContainer center={getLatLng(validPositions[0]) || DEFAULT_CENTER} zoom={12} scrollWheelZoom>
               <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
               <MapAutoFit positions={validPositions} enabled={fitMap} />
               {items.map((item) => <VehicleMarker key={item.device.id} item={item} />)}
