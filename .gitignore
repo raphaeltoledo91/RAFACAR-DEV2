@@ -4,3 +4,12 @@ logs/
 data/config.local.json
 .env
 npm-debug.log*
+
+# Arquivos locais gerados por correções/testes
+backups/
+*.bak
+*.bak-*
+corrigir-*.sh
+modernizar-*.sh
+configurar-traccar-*.sh
+adicionar-login-traccar-*.sh
