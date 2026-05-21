@@ -1398,3 +1398,427 @@ body { background: radial-gradient(circle at 12% 8%, rgba(56, 189, 248, .20), tr
 
 /* RAFACAR WEBVIEW MAP APP PATCH END */
 
+/* RAFACAR BRAND, MOBILE AND INTEGRATIONS PATCH START */
+
+:root {
+  --brand-red: #dc0012;
+  --brand-red-2: #ff3445;
+  --brand-red-dark: #8f000b;
+  --brand-black: #050506;
+  --brand-white: #ffffff;
+  --brand-display-font: Impact, "Arial Black", "Segoe UI Black", system-ui, sans-serif;
+  --glass: rgba(5, 5, 6, .74);
+  --glass-strong: rgba(5, 5, 6, .90);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(220, 0, 18, .24), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(255, 255, 255, .08), transparent 26%),
+    linear-gradient(180deg, #050506, #111217 48%, #050506);
+}
+
+.topbar h2,
+.panel h3,
+.fleet-overlay-header h3,
+.login-brand-subtitle,
+.nav button,
+.primary-btn,
+.danger-btn {
+  font-family: var(--brand-display-font);
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.primary-btn,
+.login-submit {
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-2)) !important;
+  border: 0 !important;
+  color: var(--brand-white) !important;
+  box-shadow: 0 16px 34px rgba(220, 0, 18, .28);
+}
+
+.primary-btn:hover,
+.login-submit:hover {
+  box-shadow: 0 18px 42px rgba(220, 0, 18, .38);
+}
+
+.nav button.active,
+.floating-icon-rail button.active {
+  background: linear-gradient(135deg, rgba(220, 0, 18, .94), rgba(143, 0, 11, .88)) !important;
+  border-color: rgba(255, 255, 255, .22) !important;
+  color: var(--brand-white) !important;
+}
+
+.ghost-btn:hover,
+.nav button:hover,
+.icon-only-btn:hover {
+  border-color: rgba(220, 0, 18, .58);
+  background: rgba(220, 0, 18, .14);
+}
+
+.login-shell {
+  position: relative;
+  isolation: isolate;
+  background: var(--brand-black) !important;
+}
+
+.login-shell::before,
+.login-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.login-shell::before {
+  z-index: 0;
+  background: url("/brand/login-bg.gif") center / cover no-repeat;
+  opacity: .88;
+  transform: scale(1.02);
+}
+
+.login-shell::after {
+  z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 5, 6, .92), rgba(5, 5, 6, .68) 48%, rgba(143, 0, 11, .38)),
+    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, .12), transparent 34%);
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  border-color: rgba(220, 0, 18, .42);
+  background: linear-gradient(155deg, rgba(8, 8, 10, .94), rgba(27, 7, 10, .88));
+  box-shadow: 0 30px 95px rgba(0, 0, 0, .54), 0 0 0 1px rgba(255, 255, 255, .04) inset;
+}
+
+.login-form input:focus,
+select:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid rgba(220, 0, 18, .58);
+  border-color: rgba(220, 0, 18, .64);
+}
+
+.login-security {
+  border-top-color: rgba(220, 0, 18, .24);
+}
+
+.map-app-shell,
+.dashboard-screen,
+.map-stage-panel {
+  background: var(--brand-black);
+}
+
+.map-app-shell .sidebar,
+.map-app-shell .fleet-overlay-panel,
+.map-app-shell .dashboard-compact-grid .card {
+  border-color: rgba(220, 0, 18, .26);
+  background: linear-gradient(145deg, rgba(5, 5, 6, .90), rgba(24, 24, 28, .76));
+}
+
+.map-app-shell .floating-icon-rail,
+.map-side-icon-column button {
+  border-color: rgba(220, 0, 18, .32);
+  background: rgba(5, 5, 6, .80);
+}
+
+.leaflet-div-icon {
+  background: transparent;
+  border: 0;
+}
+
+.vehicle-svg-marker {
+  width: var(--marker-size, 74px);
+  height: var(--marker-size, 74px);
+  filter: drop-shadow(0 18px 18px rgba(0, 0, 0, .52));
+}
+
+.vehicle-svg-pulse {
+  inset: 8%;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--vehicle-accent) 17%, transparent);
+}
+
+.vehicle-svg-core {
+  width: calc(var(--marker-size, 74px) - 6px);
+  height: calc(var(--marker-size, 74px) - 6px);
+}
+
+.vehicle-svg-halo {
+  fill: rgba(5, 5, 6, .92);
+  stroke-width: 3.6;
+}
+
+.vehicle-svg-fill {
+  stroke: rgba(255, 255, 255, .98);
+}
+
+.vehicle-svg-status {
+  right: 9%;
+  bottom: 11%;
+  width: clamp(11px, 21%, 17px);
+  height: clamp(11px, 21%, 17px);
+  border-color: var(--brand-black);
+}
+
+.vehicle-svg-marker.is-blocked .vehicle-svg-status {
+  background: var(--brand-red);
+  box-shadow: 0 0 18px rgba(220, 0, 18, .82);
+}
+
+.vehicle-svg-label {
+  bottom: -15px;
+  max-width: calc(var(--marker-size, 74px) + 32px);
+  border-color: rgba(220, 0, 18, .34);
+  background: rgba(5, 5, 6, .88);
+  font-family: var(--brand-display-font);
+  letter-spacing: .035em;
+}
+
+.vehicle-svg-marker.marker-compact .vehicle-svg-label {
+  display: none;
+}
+
+.vehicle-list-row {
+  width: 100%;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.vehicle-list-row:hover,
+.vehicle-list-row.is-selected {
+  border-color: rgba(220, 0, 18, .70);
+  background: linear-gradient(135deg, rgba(220, 0, 18, .18), rgba(15, 23, 42, .72));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .26);
+}
+
+.vehicle-list-row:active {
+  transform: scale(.99);
+}
+
+.vehicle-row-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.popup-location-line {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 10px 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, .04);
+  line-height: 1.35;
+}
+
+.popup-action-row {
+  display: grid;
+  margin: 10px 0 8px;
+}
+
+.popup-command-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 14px;
+  color: var(--brand-white);
+  font-family: var(--brand-display-font);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.popup-command-btn.lock {
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
+}
+
+.popup-command-btn.unlock {
+  background: linear-gradient(135deg, #16a34a, #064e3b);
+}
+
+.popup-command-btn:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
+.popup-command-message {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.popup-command-message.good {
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, .16);
+}
+
+.popup-command-message.warn {
+  color: #fde68a;
+  background: rgba(234, 179, 8, .16);
+}
+
+.popup-command-message.bad {
+  color: #fecaca;
+  background: rgba(220, 0, 18, .18);
+}
+
+.integrations-panel {
+  overflow: hidden;
+}
+
+.integration-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.integration-title-row p {
+  margin: 5px 0 0;
+}
+
+.integration-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 34px 18px;
+  border: 1px dashed rgba(220, 0, 18, .38);
+  border-radius: 22px;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(220, 0, 18, .10), rgba(255, 255, 255, .04));
+}
+
+.integration-empty-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  color: var(--brand-white);
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
+  box-shadow: 0 18px 38px rgba(220, 0, 18, .28);
+}
+
+.integration-empty-state h4 {
+  margin: 0;
+  font-family: var(--brand-display-font);
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.integration-empty-state p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.integration-pill-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.integration-pill-grid span,
+.integration-item {
+  border: 1px solid rgba(148, 163, 184, .22);
+  background: rgba(15, 23, 42, .48);
+}
+
+.integration-pill-grid span {
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.integration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.integration-item {
+  display: grid;
+  gap: 8px;
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.integration-item small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .login-shell::after {
+    background:
+      linear-gradient(180deg, rgba(5, 5, 6, .86), rgba(5, 5, 6, .72) 48%, rgba(143, 0, 11, .38)),
+      radial-gradient(circle at 50% 10%, rgba(255, 255, 255, .14), transparent 30%);
+  }
+
+  .login-brand-subtitle {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .map-app-shell .floating-icon-rail {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: 62px;
+    scrollbar-width: none;
+  }
+
+  .map-app-shell .floating-icon-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .map-app-shell .floating-icon-rail button {
+    flex: 0 0 42px;
+  }
+
+  .map-app-shell .fleet-overlay-panel {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 66px);
+    height: min(50dvh, 400px);
+  }
+
+  .map-app-shell .dashboard-compact-grid,
+  .map-app-shell.sidebar-hidden .dashboard-compact-grid {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 66px);
+  }
+
+  .vehicle-popup {
+    min-width: min(286px, calc(100vw - 46px));
+    max-width: calc(100vw - 46px);
+    padding: 12px;
+  }
+
+  .vehicle-row-badges {
+    justify-content: flex-start;
+  }
+
+  .integration-title-row {
+    display: grid;
+  }
+}
+
+/* RAFACAR BRAND, MOBILE AND INTEGRATIONS PATCH END */
+

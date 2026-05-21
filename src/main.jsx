@@ -109,6 +109,7 @@ const tabs = [
   ['relatorios', 'Relatórios', Route],
   ['comandos', 'Comandos', Command],
   ['atributos', 'Atributos', Cpu],
+  ['integracoes', 'Integracoes', Zap],
   ['config', 'Config', Settings]
 ];
 
@@ -168,6 +169,43 @@ function useTheme() {
 
 function normalizeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+const BLOCK_COMMAND_ALIASES = [
+  'engineStop', 'engineLock', 'engineDisable', 'engineImmobilize',
+  'bloqueio', 'bloquear', 'block', 'lock', 'relayOff', 'fuelCut', 'fuelCutOff', 'immobilize'
+];
+
+const UNBLOCK_COMMAND_ALIASES = [
+  'engineResume', 'engineUnlock', 'engineEnable', 'engineMobilize',
+  'desbloqueio', 'desbloquear', 'unblock', 'unlock', 'relayOn', 'fuelCutOn', 'mobilize'
+];
+
+function commandTypeValue(item = {}) {
+  if (typeof item === 'string') return item;
+  return String(item.type || item.name || item.command || '').trim();
+}
+
+function findBlockCommandType(types = [], blocked = false) {
+  const candidates = (blocked ? UNBLOCK_COMMAND_ALIASES : BLOCK_COMMAND_ALIASES).map(normalizeText);
+  const available = normalizeArray(types)
+    .map((item) => {
+      const raw = commandTypeValue(item);
+      return raw ? { raw, normalized: normalizeText(raw) } : null;
+    })
+    .filter(Boolean);
+
+  for (const candidate of candidates) {
+    const exact = available.find((item) => item.normalized === candidate);
+    if (exact) return exact.raw;
+  }
+
+  for (const candidate of candidates) {
+    const partial = available.find((item) => item.normalized.includes(candidate));
+    if (partial) return partial.raw;
+  }
+
+  return '';
 }
 
 function numberOrNull(value) {
@@ -603,9 +641,20 @@ function vehicleSvgBody(category) {
   return body.default;
 }
 
-function vehicleSvgMarkup(category, state, status, course, title, label) {
+function markerSizeForZoom(zoom = 14) {
+  const value = numberOrNull(zoom);
+  if (value === null || value < 11) return 48;
+  if (value < 13) return 56;
+  if (value < 15) return 64;
+  if (value < 17) return 74;
+  if (value < 19) return 84;
+  return 94;
+}
+
+function vehicleSvgMarkup(category, state, status, course, title, label, size = 74, blocked = false) {
+  const markerClass = size < 62 ? 'marker-compact' : 'marker-detailed';
   return `
-    <div class="vehicle-svg-marker movement-${escapeHtml(state)} status-${escapeHtml(status)}" title="${escapeHtml(title)}">
+    <div class="vehicle-svg-marker movement-${escapeHtml(state)} status-${escapeHtml(status)} ${escapeHtml(markerClass)} ${blocked ? 'is-blocked' : 'is-free'}" title="${escapeHtml(title)}" style="--marker-size:${size}px">
       <div class="vehicle-svg-pulse"></div>
       <svg class="vehicle-svg-core" viewBox="0 0 70 70" role="img" aria-label="${escapeHtml(title)}" style="transform: rotate(${safeCourse(course)}deg)">
         <circle class="vehicle-svg-halo" cx="35" cy="35" r="32"></circle>
@@ -618,7 +667,7 @@ function vehicleSvgMarkup(category, state, status, course, title, label) {
   `;
 }
 
-function createVehicleIcon(device = {}, position = {}) {
+function createVehicleIcon(device = {}, position = {}, zoom = 14) {
   const safePosition = position && typeof position === 'object' ? position : {};
   const category = detectVehicleCategory(device, safePosition);
   const course = safeCourse(safePosition.course);
@@ -626,13 +675,15 @@ function createVehicleIcon(device = {}, position = {}) {
   const status = String(device.status || 'unknown').toLowerCase();
   const title = `${getVehicleName(device)} - ${movementLabel(state)} - ${formatSpeed(safePosition.speed)} - direção ${course}°`;
   const label = vehicleMapLabel(category);
+  const size = markerSizeForZoom(zoom);
+  const anchor = Math.round(size / 2);
 
   return L.divIcon({
     className: '',
-    iconSize: [74, 74],
-    iconAnchor: [37, 37],
-    popupAnchor: [0, -34],
-    html: vehicleSvgMarkup(category, state, status, course, title, label)
+    iconSize: [size, size],
+    iconAnchor: [anchor, anchor],
+    popupAnchor: [0, -Math.round(size * 0.48)],
+    html: vehicleSvgMarkup(category, state, status, course, title, label, size, isBlocked(device, safePosition))
   });
 }
 
@@ -733,10 +784,35 @@ function MapAutoFit({ positions, enabled = true, singleZoom = 18, maxZoom = 18, 
   return null;
 }
 
+function useMapZoom() {
+  const map = useMap();
+  const [zoom, setZoom] = useState(() => map.getZoom());
+  useEffect(() => {
+    const syncZoom = () => setZoom(map.getZoom());
+    syncZoom();
+    map.on('zoomend', syncZoom);
+    return () => map.off('zoomend', syncZoom);
+  }, [map]);
+  return zoom;
+}
 
-const VehicleMarker = memo(function VehicleMarker({ item }) {
+function MapFocusTarget({ item, zoom = 18 }) {
+  const map = useMap();
+  useEffect(() => {
+    const latLng = getLatLng(item?.position);
+    if (!latLng) return;
+    map.flyTo(latLng, zoom, { animate: true, duration: 0.78 });
+  }, [item, map, zoom]);
+  return null;
+}
+
+
+const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
   const { device, position, event, category } = item;
   const map = useMap();
+  const zoom = useMapZoom();
+  const [commandBusy, setCommandBusy] = useState(false);
+  const [commandMessage, setCommandMessage] = useState(null);
   const latLng = getLatLng(position);
   if (!latLng) return null;
 
@@ -750,13 +826,45 @@ const VehicleMarker = memo(function VehicleMarker({ item }) {
   const last = position.deviceTime || position.fixTime || position.serverTime;
   const idleMinutes = minutesSincePosition(position);
   const plate = getVehiclePlate(device) || getVehicleUniqueId(device) || vehicleMapLabel(category);
+  const lat = numberOrNull(position.latitude);
+  const lon = numberOrNull(position.longitude);
+  const locationText = position.address || (lat !== null && lon !== null ? `${lat.toFixed(5)}, ${lon.toFixed(5)}` : '-');
+
+  const sendBlockCommand = async () => {
+    const action = blocked ? 'desbloquear' : 'bloquear';
+    const confirmed = window.confirm(`Enviar comando para ${action} ${getVehicleName(device)}?`);
+    if (!confirmed) return;
+
+    setCommandBusy(true);
+    setCommandMessage(null);
+    try {
+      const types = await request(`/api/command-types?deviceId=${device.id}`);
+      const selectedType = findBlockCommandType(types, blocked);
+      if (!selectedType) {
+        throw new Error(`Nenhum comando cadastrado para ${action}. Cadastre engineStop/engineResume ou equivalente no Traccar.`);
+      }
+      const result = await request('/api/send-command', {
+        method: 'POST',
+        body: JSON.stringify({ deviceId: Number(device.id), type: selectedType, attributes: {} })
+      });
+      setCommandMessage({
+        tone: result?.ok === false ? 'warn' : 'good',
+        text: `Comando ${selectedType} enviado para ${action}.`
+      });
+    } catch (error) {
+      setCommandMessage({ tone: 'bad', text: `Falha ao enviar comando: ${error.message}` });
+    } finally {
+      setCommandBusy(false);
+    }
+  };
 
   return (
     <Marker
       position={latLng}
-      icon={createVehicleIcon(device, position)}
+      icon={createVehicleIcon(device, position, zoom)}
       eventHandlers={{
         click: () => {
+          onFocus?.(device.id);
           map.flyTo(latLng, 18, { animate: true, duration: 0.75 });
         }
       }}
@@ -785,6 +893,24 @@ const VehicleMarker = memo(function VehicleMarker({ item }) {
             <TelemetryTile icon={<Navigation size={15} />} label="Curso" value={`${safeCourse(position.course)}°`} tone="info" />
             <TelemetryTile icon={<Clock3 size={15} />} label="Atualização" value={timeAgo(last)} tone="warn" />
           </div>
+
+          <div className="popup-location-line">
+            <MapPinned size={15} />
+            <span>{locationText}</span>
+          </div>
+
+          <div className="popup-action-row">
+            <button
+              type="button"
+              className={`popup-command-btn ${blocked ? 'unlock' : 'lock'}`}
+              onClick={sendBlockCommand}
+              disabled={commandBusy}
+            >
+              {blocked ? <Unlock size={16} /> : <Lock size={16} />}
+              <span>{commandBusy ? 'Enviando...' : blocked ? 'Liberar bloqueio' : 'Bloquear veiculo'}</span>
+            </button>
+          </div>
+          {commandMessage && <div className={`popup-command-message ${commandMessage.tone}`}>{commandMessage.text}</div>}
 
           {state === 'idle' && (
             <div className="idle-alert">
@@ -829,12 +955,21 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, search, setSearch, statusFilter, setStatusFilter, fleetPanelHidden, setFleetPanelHidden }) {
+function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, search, setSearch, statusFilter, setStatusFilter, fleetPanelHidden, setFleetPanelHidden, focusedVehicleId, setFocusedVehicleId }) {
   const validPositions = items.map((item) => item?.position).filter(isValidPosition);
   const layer = MAP_LAYERS[layerKey] || MAP_LAYERS.osm;
   const moving = items.filter(({ device, position }) => movementState(device, position) === 'moving').length;
   const idle = items.filter(({ device, position }) => movementState(device, position) === 'idle').length;
   const stopped = items.filter(({ device, position }) => movementState(device, position) === 'stopped').length;
+  const focusedItem = items.find(({ device, position }) => Number(device.id) === Number(focusedVehicleId) && isValidPosition(position)) || null;
+  const focusVehicle = useCallback((vehicleId) => {
+    setFocusedVehicleId(Number(vehicleId));
+    setFitMap(false);
+  }, [setFitMap, setFocusedVehicleId]);
+  const toggleAutoFit = useCallback(() => {
+    setFocusedVehicleId(null);
+    setFitMap((value) => !value);
+  }, [setFitMap, setFocusedVehicleId]);
 
   return (
     <div className="dashboard-screen">
@@ -852,7 +987,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
               <select value={layerKey} onChange={(event) => setLayerKey(event.target.value)} aria-label="Camada do mapa">
                 {Object.entries(MAP_LAYERS).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
               </select>
-              <button className="ghost-btn" onClick={() => setFitMap((v) => !v)} title="Centralizar mapa">
+              <button className="ghost-btn" onClick={toggleAutoFit} title="Centralizar mapa">
                 <MapPinned size={17} /> {fitMap ? 'Auto-fit ligado' : 'Auto-fit desligado'}
               </button>
               <button className="ghost-btn" onClick={() => setFleetPanelHidden((value) => !value)} title={fleetPanelHidden ? 'Mostrar lista lateral da frota' : 'Esconder lista lateral da frota'}>
@@ -866,7 +1001,8 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
             <MapContainer center={getLatLng(validPositions[0]) || DEFAULT_CENTER} zoom={12} scrollWheelZoom>
               <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
               <MapAutoFit positions={validPositions} enabled={fitMap} singleZoom={17} maxZoom={17} padding={[72, 72]} />
-              {items.map((item) => <VehicleMarker key={item.device.id} item={item} />)}
+              <MapFocusTarget item={focusedItem} zoom={18} />
+              {items.map((item) => <VehicleMarker key={item.device.id} item={item} onFocus={focusVehicle} />)}
             </MapContainer>
           </div>
 
@@ -905,7 +1041,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
               <span><i className="legend-dot stopped"></i> Parado</span>
               <span><i className="legend-dot idle"></i> Ocioso</span>
             </div>
-            <VehicleList items={items} />
+            <VehicleList items={items} selectedDeviceId={focusedVehicleId} onSelect={({ device }) => focusVehicle(device.id)} />
           </section>
         </section>
       </div>
@@ -913,25 +1049,30 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
   );
 }
 
-function VehicleList({ items, compact = false }) {
+function VehicleList({ items, compact = false, selectedDeviceId = null, onSelect }) {
   if (!items.length) return <div className="warn-box">Nenhum veículo encontrado com os filtros atuais.</div>;
   return (
     <div className="list">
       {items.map(({ device, position, event, category }) => {
         const last = position?.deviceTime || position?.fixTime || position?.serverTime;
+        const blocked = isBlocked(device, position || {});
+        const selected = Number(device.id) === Number(selectedDeviceId);
         return (
-          <div className="row" key={device.id}>
+          <button type="button" className={`row vehicle-list-row ${selected ? 'is-selected' : ''}`} key={device.id} onClick={() => onSelect?.({ device, position, event, category })}>
             <div className="row-head">
               <div>
                 <b>{getVehicleName(device)}</b>
                 <br />
                 <small>{vehicleLabel(category)} · {getVehiclePlate(device) || getVehicleUniqueId(device) || 'sem placa/ID'}</small>
               </div>
-              <Badge tone={statusClass(device.status)}>{statusLabel(device.status)}</Badge>
+              <span className="vehicle-row-badges">
+                <Badge tone={statusClass(device.status)}>{statusLabel(device.status)}</Badge>
+                <Badge tone={blocked ? 'bad' : 'good'}>{blocked ? 'Bloqueado' : 'Liberado'}</Badge>
+              </span>
             </div>
             <small>{position ? `${movementLabel(movementState(device, position))} · ${formatSpeed(position.speed)} · ${timeAgo(last)} · ${formatDate(last)}` : 'Sem posição recente'}</small>
             {!compact && <small>{alertText(event, position || {})}</small>}
-          </div>
+          </button>
         );
       })}
     </div>
@@ -1409,6 +1550,44 @@ function ReportsPage({ items, layerKey }) {
 }
 
 
+function IntegrationsPage({ config }) {
+  const integrations = normalizeArray(config?.integrations || config?.customIntegrations || config?.customerIntegrations);
+  const ideas = ['WhatsApp', 'ERP', 'Financeiro', 'CRM', 'Webhooks', 'Aplicativo WebView', 'Alertas personalizados', 'API de terceiros'];
+
+  return (
+    <section className="panel integrations-panel">
+      <div className="integration-title-row">
+        <div>
+          <h3>Integracoes e personalizacoes</h3>
+          <p className="muted">Modulo reservado para adaptar o painel conforme cada cliente pedir.</p>
+        </div>
+        <Badge tone={integrations.length ? 'good' : 'warn'}><Zap size={14} /> {integrations.length ? `${integrations.length} ativa(s)` : 'Pronto para crescer'}</Badge>
+      </div>
+
+      {integrations.length ? (
+        <div className="integration-grid">
+          {integrations.map((item, index) => (
+            <div className="integration-item" key={item.id || item.name || index}>
+              <b>{item.name || item.label || `Integracao ${index + 1}`}</b>
+              <small>{item.description || item.type || 'Personalizacao ativa para este cliente.'}</small>
+              <Badge tone={item.enabled === false ? 'warn' : 'good'}>{item.enabled === false ? 'Pausada' : 'Ativa'}</Badge>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="integration-empty-state">
+          <div className="integration-empty-icon"><Zap size={30} /></div>
+          <h4>Nenhuma integracao ativa ainda.</h4>
+          <p>Este espaco fica preparado para vender e ativar novas conexoes quando o cliente precisar automatizar processos, receber alertas ou conectar o rastreamento com outros sistemas.</p>
+          <div className="integration-pill-grid">
+            {ideas.map((idea) => <span key={idea}>{idea}</span>)}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ConfigPage({ config, health, refreshHealth, authUser, onLogout }) {
   return (
     <section className="panel">
@@ -1459,8 +1638,8 @@ function BrandLogo({ compact = false }) {
   return (
     <div className={`brand-logo-block ${compact ? 'compact' : ''}`}>
       <span className="brand-logo-mark" aria-label="RAFACAR RASTREADORES">
-        <img className="brand-logo-img logo-light-only" src="/brand/rafacar-logo-light.png" alt="RAFACAR RASTREADORES" />
-        <img className="brand-logo-img logo-dark-only" src="/brand/rafacar-logo-dark.png" alt="RAFACAR RASTREADORES" />
+        <img className="brand-logo-img logo-light-only" src="/brand/rafacar-logo-light-remastered.png" alt="RAFACAR RASTREADORES" />
+        <img className="brand-logo-img logo-dark-only" src="/brand/rafacar-logo-dark-remastered.png" alt="RAFACAR RASTREADORES" />
       </span>
     </div>
   );
@@ -1527,6 +1706,7 @@ function App() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [fitMap, setFitMap] = useState(true);
+  const [focusedVehicleId, setFocusedVehicleId] = useState(null);
   const [layerKey, setLayerKey] = useState(() => localStorage.getItem('traccar-dev-map-layer') || 'googleHybrid');
   const [sidebarHidden, setSidebarHidden] = useState(() => {
     const saved = localStorage.getItem('rafacar-sidebar-hidden');
@@ -1708,6 +1888,8 @@ function App() {
             setStatusFilter={setStatusFilter}
             fleetPanelHidden={fleetPanelHidden}
             setFleetPanelHidden={setFleetPanelHidden}
+            focusedVehicleId={focusedVehicleId}
+            setFocusedVehicleId={setFocusedVehicleId}
           />
         )}
         {activeTab === 'veiculos' && <VehiclesPage items={filteredItems} />}
@@ -1715,6 +1897,7 @@ function App() {
         {activeTab === 'relatorios' && <ReportsPage items={items} layerKey={layerKey} />}
         {activeTab === 'comandos' && <CommandsPage items={items} />}
         {activeTab === 'atributos' && <AttributesPage items={filteredItems} />}
+        {activeTab === 'integracoes' && <IntegrationsPage config={config} />}
         {activeTab === 'config' && <ConfigPage config={config} health={health} refreshHealth={refreshHealth} authUser={auth.user} onLogout={handleLogout} />}
       </main>
     </div>
