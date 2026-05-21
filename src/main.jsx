@@ -837,7 +837,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
   const stopped = items.filter(({ device, position }) => movementState(device, position) === 'stopped').length;
 
   return (
-    <>
+    <div className="dashboard-screen">
       <div className="card-grid modern-card-grid dashboard-compact-grid">
         <StatCard icon={<Car size={22} />} label="Veículos" value={stats.total} hint="Total carregado do Traccar" />
         <StatCard icon={<Navigation size={22} />} label="Movimento" value={moving} hint="Carro verde no mapa" />
@@ -909,7 +909,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
           </section>
         </section>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -1462,10 +1462,6 @@ function BrandLogo({ compact = false }) {
         <img className="brand-logo-img logo-light-only" src="/brand/rafacar-logo-light.png" alt="RAFACAR RASTREADORES" />
         <img className="brand-logo-img logo-dark-only" src="/brand/rafacar-logo-dark.png" alt="RAFACAR RASTREADORES" />
       </span>
-      <span className="brand-logo-text">
-        <strong>RAFACAR RASTREADORES</strong>
-        <small>Rastreamento veicular inteligente</small>
-      </span>
     </div>
   );
 }
@@ -1506,7 +1502,7 @@ function LoginPage({ onLogin }) {
         <button className="primary-btn login-submit" disabled={busy} type="submit"><KeyRound size={18} /> {busy ? 'Validando no Traccar...' : 'Entrar no painel'}</button>
       </form>
       <div className="login-support-row"><SupportWhatsapp /></div>
-      <div className="login-security"><ShieldCheck size={16} /><span>Sua senha é enviada somente ao backend local, que autentica no Traccar e guarda a sessão em cookie HttpOnly.</span></div>
+      <div className="login-security"><ShieldCheck size={16} /><span>Sua senha é enviada somente ao backend seguro do RAFACAR, que autentica no Traccar e guarda a sessão em cookie HttpOnly.</span></div>
     </div></div>
   );
 }
@@ -1532,12 +1528,23 @@ function App() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [fitMap, setFitMap] = useState(true);
   const [layerKey, setLayerKey] = useState(() => localStorage.getItem('traccar-dev-map-layer') || 'googleHybrid');
-  const [sidebarHidden, setSidebarHidden] = useState(() => localStorage.getItem('rafacar-sidebar-hidden') === 'true');
+  const [sidebarHidden, setSidebarHidden] = useState(() => {
+    const saved = localStorage.getItem('rafacar-sidebar-hidden');
+    if (saved !== null) return saved === 'true';
+    return window.matchMedia('(max-width: 980px)').matches;
+  });
   const [fleetPanelHidden, setFleetPanelHidden] = useState(() => localStorage.getItem('rafacar-fleet-panel-hidden') === 'true');
 
   useEffect(() => { localStorage.setItem('traccar-dev-map-layer', layerKey); }, [layerKey]);
   useEffect(() => { localStorage.setItem('rafacar-sidebar-hidden', String(sidebarHidden)); }, [sidebarHidden]);
   useEffect(() => { localStorage.setItem('rafacar-fleet-panel-hidden', String(fleetPanelHidden)); }, [fleetPanelHidden]);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 980px)');
+    const syncSidebar = () => { if (query.matches) setSidebarHidden(true); };
+    syncSidebar();
+    query.addEventListener('change', syncSidebar);
+    return () => query.removeEventListener('change', syncSidebar);
+  }, []);
 
   const loadData = useCallback(async ({ silent = false } = {}) => {
     setError('');
@@ -1603,7 +1610,7 @@ function App() {
   if (!auth.authenticated) return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <div className={`app-shell ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
+    <div className={`app-shell ${activeTab === 'dashboard' ? 'map-app-shell' : 'workspace-shell'} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
       {!sidebarHidden && (
       <aside className="sidebar">
         <div className="brand brand-company">
@@ -1622,6 +1629,18 @@ function App() {
           <Badge tone="info"><Activity size={14} /> {lastUpdate ? `Atualizado ${formatTime(lastUpdate)}` : 'Sem atualização'}</Badge>
         </div>
         <div className="sidebar-support-row"><SupportWhatsapp compact /></div>
+        <div className="sidebar-toolbox">
+          <button className="ghost-btn sidebar-control-btn" onClick={() => setSidebarHidden(true)} title="Recolher menu lateral">
+            <Layers size={17} /> Recolher
+          </button>
+          <button className="ghost-btn theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}>
+            <Settings size={17} /> {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          </button>
+          <button className="primary-btn" onClick={() => loadData({ silent: true })} disabled={refreshing}>
+            <RefreshCw size={17} /> {refreshing ? 'Atualizando...' : 'Atualizar'}
+          </button>
+          <button className="danger-btn" onClick={handleLogout}><LogOut size={17} /> Sair</button>
+        </div>
       </aside>
       )}
 
@@ -1651,7 +1670,7 @@ function App() {
         </div>
       )}
 
-      <main className="main">
+      <main className={`main ${activeTab === 'dashboard' ? 'map-app-main' : 'workspace-main'}`}>
         <div className="topbar">
           <div>
             <h2>{title}</h2>

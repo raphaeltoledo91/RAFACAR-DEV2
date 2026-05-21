@@ -1,0 +1,19 @@
+{
+  "name": "RAFACAR RASTREADORES",
+  "short_name": "RAFACAR",
+  "description": "Painel RAFACAR para rastreamento veicular via Traccar.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/brand/rafacar-logo-dark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
