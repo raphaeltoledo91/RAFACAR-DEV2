@@ -54,3 +54,13 @@ curl -i http://127.0.0.1:3000/api/health
 curl -s http://127.0.0.1:3000/api/bootstrap | head -c 1000
 pm2 logs traccar-pro-frontend --lines 100
 ```
+
+## Railway
+
+Para publicar o RAFACAR-DEV2 fora da VPS do Traccar, use Railway como Web Service Node/Express.
+
+- Guia operacional: [`docs/RAILWAY_DEPLOY.md`](docs/RAILWAY_DEPLOY.md)
+- Plano de evolucao: [`docs/LONG_TERM_PLAN.md`](docs/LONG_TERM_PLAN.md)
+- Configuracao versionada: [`railway.toml`](railway.toml)
+
+O Traccar continua rodando na VPS Oracle. A Railway hospeda apenas o frontend RAFACAR e o proxy Express que consome a API do Traccar.
