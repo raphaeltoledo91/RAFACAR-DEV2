@@ -1473,7 +1473,7 @@ body {
 
 .login-shell::before {
   z-index: 0;
-  background: url("/brand/login-bg.gif") center / cover no-repeat;
+  background: url("/brand/login-bg-city-desktop.jpg") center / cover no-repeat;
   opacity: .88;
   transform: scale(1.02);
 }
@@ -2415,7 +2415,7 @@ textarea:focus {
 
 /* RAFACAR VEHICLE PNG MARKERS AND POPUP CENTERING PATCH END */
 
-/* RAFACAR TARKAN MAP REFINEMENT START */
+/* RAFACAR CARS V2 MAP REFINEMENT START */
 
 .vehicle-svg-marker {
   background: transparent !important;
@@ -2608,5 +2608,49 @@ textarea:focus {
   }
 }
 
-/* RAFACAR TARKAN MAP REFINEMENT END */
+/* RAFACAR CARS V2 MAP REFINEMENT END */
+
+/* RAFACAR CITY LOGIN BACKGROUND START */
+
+.login-shell {
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #071013 !important;
+}
+
+.login-shell::before {
+  background: url("/brand/login-bg-city-desktop.jpg") center center / cover no-repeat !important;
+  opacity: .94;
+  transform: scale(1.01);
+  filter: saturate(1.12) contrast(1.08) brightness(.90);
+}
+
+.login-shell::after {
+  background:
+    linear-gradient(90deg, rgba(7, 16, 19, .88), rgba(7, 16, 19, .62) 47%, rgba(18, 61, 58, .25)),
+    linear-gradient(180deg, rgba(7, 16, 19, .26), rgba(7, 16, 19, .72)),
+    radial-gradient(circle at 50% 24%, rgba(105, 190, 178, .16), transparent 34%) !important;
+}
+
+:root[data-theme="light"] .login-shell::before {
+  opacity: .90;
+  filter: saturate(1.08) contrast(1.04) brightness(1.02);
+}
+
+:root[data-theme="light"] .login-shell::after {
+  background:
+    linear-gradient(90deg, rgba(238, 248, 246, .72), rgba(238, 248, 246, .42) 47%, rgba(31, 118, 109, .16)),
+    linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(7, 16, 19, .30)),
+    radial-gradient(circle at 50% 20%, rgba(31, 118, 109, .14), transparent 34%) !important;
+}
+
+@media (max-width: 760px) {
+  .login-shell::before {
+    background-image: url("/brand/login-bg-city-mobile.jpg") !important;
+    background-position: center center !important;
+    transform: scale(1);
+  }
+}
+
+/* RAFACAR CITY LOGIN BACKGROUND END */
 

@@ -38,30 +38,30 @@ import './styles.css';
 const API_TIMEOUT_MS = 18000;
 const DEFAULT_CENTER = [-20.812249, -49.375975];
 const DEFAULT_POLLING_MS = 30000;
-const TARKAN_MAP_ICON_PATH = '/vehicle-icons/tarkan-map';
+const CARS_V2_MAP_ICON_PATH = '/vehicle-icons/carsv2-map';
 
 const ICONS = {
-  motorcycle: [`${TARKAN_MAP_ICON_PATH}/motorcycle_color1.png`, `${TARKAN_MAP_ICON_PATH}/motorcycle_base.png`, '/vehicle-icons/topview/motorcycle.png'],
-  scooter: [`${TARKAN_MAP_ICON_PATH}/scooter_color1.png`, `${TARKAN_MAP_ICON_PATH}/scooter_base.png`, '/vehicle-icons/topview/motorcycle.png'],
-  car: [`${TARKAN_MAP_ICON_PATH}/carroPasseio_color1.png`, `${TARKAN_MAP_ICON_PATH}/carroPasseio_base.png`, '/vehicle-icons/topview/car.png'],
-  utility: [`${TARKAN_MAP_ICON_PATH}/carroUtilitario_color1.png`, `${TARKAN_MAP_ICON_PATH}/carroUtilitario_base.png`, '/vehicle-icons/topview/van.png'],
-  truck: [`${TARKAN_MAP_ICON_PATH}/truckBau_color1.png`, `${TARKAN_MAP_ICON_PATH}/caminhaoBau_color1.png`, '/vehicle-icons/topview/truck.png'],
-  truckHorse: [`${TARKAN_MAP_ICON_PATH}/truckCavalo_color1.png`, `${TARKAN_MAP_ICON_PATH}/truckCavalo_base.png`, '/vehicle-icons/topview/truck.png'],
-  caminhao: [`${TARKAN_MAP_ICON_PATH}/caminhaoBau_color1.png`, `${TARKAN_MAP_ICON_PATH}/caminhaoBau_base.png`, '/vehicle-icons/topview/truck.png'],
-  bus: [`${TARKAN_MAP_ICON_PATH}/bus_color1.png`, `${TARKAN_MAP_ICON_PATH}/bus_base.png`, '/vehicle-icons/topview/bus.png'],
-  van: [`${TARKAN_MAP_ICON_PATH}/vanUtilitario_color1.png`, `${TARKAN_MAP_ICON_PATH}/vanUtilitario_base.png`, '/vehicle-icons/topview/van.png'],
-  pickup: [`${TARKAN_MAP_ICON_PATH}/carroUtilitario_color1.png`, `${TARKAN_MAP_ICON_PATH}/offroad_color1.png`, '/vehicle-icons/topview/pickup.png'],
-  tractor: [`${TARKAN_MAP_ICON_PATH}/tractor_color1.png`, `${TARKAN_MAP_ICON_PATH}/tractor_base.png`, '/vehicle-icons/topview/tractor.png'],
-  bicycle: [`${TARKAN_MAP_ICON_PATH}/bicycle_color1.png`, `${TARKAN_MAP_ICON_PATH}/bicycle_base.png`, '/vehicle-icons/topview/default.png'],
-  person: [`${TARKAN_MAP_ICON_PATH}/person_color1.png`, `${TARKAN_MAP_ICON_PATH}/person_base.png`, '/vehicle-icons/topview/default.png'],
-  animal: [`${TARKAN_MAP_ICON_PATH}/pet_color1.png`, `${TARKAN_MAP_ICON_PATH}/pet_base.png`, '/vehicle-icons/topview/default.png'],
-  boat: [`${TARKAN_MAP_ICON_PATH}/boat_color1.png`, `${TARKAN_MAP_ICON_PATH}/boat_base.png`, '/vehicle-icons/topview/default.png'],
-  ship: [`${TARKAN_MAP_ICON_PATH}/ship_color1.png`, `${TARKAN_MAP_ICON_PATH}/ship_base.png`, '/vehicle-icons/topview/default.png'],
-  airplane: [`${TARKAN_MAP_ICON_PATH}/plane_color1.png`, `${TARKAN_MAP_ICON_PATH}/plane_base.png`, '/vehicle-icons/topview/default.png'],
-  helicopter: [`${TARKAN_MAP_ICON_PATH}/helicopter_color1.png`, `${TARKAN_MAP_ICON_PATH}/helicopter_base.png`, '/vehicle-icons/topview/default.png'],
-  crane: [`${TARKAN_MAP_ICON_PATH}/crane_color1.png`, `${TARKAN_MAP_ICON_PATH}/crane_base.png`, '/vehicle-icons/topview/default.png'],
-  offroad: [`${TARKAN_MAP_ICON_PATH}/offroad_color1.png`, `${TARKAN_MAP_ICON_PATH}/offroad_base.png`, '/vehicle-icons/topview/default.png'],
-  default: [`${TARKAN_MAP_ICON_PATH}/default_color1.png`, `${TARKAN_MAP_ICON_PATH}/default_base.png`, '/vehicle-icons/topview/default.png']
+  motorcycle: [`${CARS_V2_MAP_ICON_PATH}/motorcycle_base.png`, '/vehicle-icons/topview/motorcycle.png'],
+  scooter: [`${CARS_V2_MAP_ICON_PATH}/scooter_base.png`, '/vehicle-icons/topview/motorcycle.png'],
+  car: [`${CARS_V2_MAP_ICON_PATH}/carroPasseio_base.png`, '/vehicle-icons/topview/car.png'],
+  utility: [`${CARS_V2_MAP_ICON_PATH}/carroUtilitario_base.png`, '/vehicle-icons/topview/van.png'],
+  truck: [`${CARS_V2_MAP_ICON_PATH}/truckBau_base.png`, `${CARS_V2_MAP_ICON_PATH}/caminhaoBau_base.png`, '/vehicle-icons/topview/truck.png'],
+  truckHorse: [`${CARS_V2_MAP_ICON_PATH}/truckCavalo_base.png`, '/vehicle-icons/topview/truck.png'],
+  caminhao: [`${CARS_V2_MAP_ICON_PATH}/caminhaoBau_base.png`, '/vehicle-icons/topview/truck.png'],
+  bus: [`${CARS_V2_MAP_ICON_PATH}/bus_base.png`, '/vehicle-icons/topview/bus.png'],
+  van: [`${CARS_V2_MAP_ICON_PATH}/vanUtilitario_base.png`, '/vehicle-icons/topview/van.png'],
+  pickup: [`${CARS_V2_MAP_ICON_PATH}/carroUtilitario_base.png`, `${CARS_V2_MAP_ICON_PATH}/offroad_base.png`, '/vehicle-icons/topview/pickup.png'],
+  tractor: [`${CARS_V2_MAP_ICON_PATH}/tractor_base.png`, '/vehicle-icons/topview/tractor.png'],
+  bicycle: [`${CARS_V2_MAP_ICON_PATH}/bicycle_base.png`, '/vehicle-icons/topview/default.png'],
+  person: [`${CARS_V2_MAP_ICON_PATH}/person_base.png`, '/vehicle-icons/topview/default.png'],
+  animal: [`${CARS_V2_MAP_ICON_PATH}/pet_base.png`, '/vehicle-icons/topview/default.png'],
+  boat: [`${CARS_V2_MAP_ICON_PATH}/boat_base.png`, '/vehicle-icons/topview/default.png'],
+  ship: [`${CARS_V2_MAP_ICON_PATH}/ship_base.png`, '/vehicle-icons/topview/default.png'],
+  airplane: [`${CARS_V2_MAP_ICON_PATH}/plane_base.png`, '/vehicle-icons/topview/default.png'],
+  helicopter: [`${CARS_V2_MAP_ICON_PATH}/helicopter_base.png`, '/vehicle-icons/topview/default.png'],
+  crane: [`${CARS_V2_MAP_ICON_PATH}/crane_base.png`, '/vehicle-icons/topview/default.png'],
+  offroad: [`${CARS_V2_MAP_ICON_PATH}/offroad_base.png`, '/vehicle-icons/topview/default.png'],
+  default: [`${CARS_V2_MAP_ICON_PATH}/default_base.png`, '/vehicle-icons/topview/default.png']
 };
 
 const MAP_LAYERS = {
@@ -644,12 +644,12 @@ function vehicleSvgBody(category) {
 
 function markerSizeForZoom(zoom = 14) {
   const value = numberOrNull(zoom);
-  if (value === null || value < 11) return 48;
-  if (value < 13) return 56;
-  if (value < 15) return 64;
-  if (value < 17) return 74;
-  if (value < 19) return 84;
-  return 94;
+  if (value === null || value < 11) return 34;
+  if (value < 13) return 40;
+  if (value < 15) return 48;
+  if (value < 17) return 56;
+  if (value < 19) return 64;
+  return 72;
 }
 
 function vehicleSvgMarkup(category, state, status, course, title, label, size = 74, blocked = false) {
