@@ -644,12 +644,12 @@ function vehicleSvgBody(category) {
 
 function markerSizeForZoom(zoom = 14) {
   const value = numberOrNull(zoom);
-  if (value === null || value < 11) return 34;
-  if (value < 13) return 40;
-  if (value < 15) return 48;
-  if (value < 17) return 56;
-  if (value < 19) return 64;
-  return 72;
+  if (value === null || value < 11) return 24;
+  if (value < 13) return 30;
+  if (value < 15) return 36;
+  if (value < 17) return 44;
+  if (value < 19) return 52;
+  return 58;
 }
 
 function vehicleSvgMarkup(category, state, status, course, title, label, size = 74, blocked = false) {
@@ -807,13 +807,28 @@ function MapFocusTarget({ item, zoom = 18 }) {
 }
 
 
-const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
+const VehicleMarker = memo(function VehicleMarker({ item, onFocus, focused = false }) {
   const { device, position, event, category } = item;
   const map = useMap();
   const zoom = useMapZoom();
+  const markerRef = useRef(null);
   const [commandBusy, setCommandBusy] = useState(false);
   const [commandMessage, setCommandMessage] = useState(null);
   const latLng = getLatLng(position);
+  const latKey = latLng ? `${latLng[0]},${latLng[1]}` : '';
+  const centerOnPopup = useCallback((targetZoom = 18) => {
+    if (!latLng) return;
+    const nextZoom = Math.max(map.getZoom(), targetZoom);
+    map.flyTo(latLng, nextZoom, { animate: true, duration: 0.68 });
+  }, [latKey, map]);
+  useEffect(() => {
+    if (!focused || !latLng) return undefined;
+    const timer = window.setTimeout(() => {
+      centerOnPopup(18);
+      markerRef.current?.openPopup?.();
+    }, 240);
+    return () => window.clearTimeout(timer);
+  }, [centerOnPopup, focused, latKey]);
   if (!latLng) return null;
 
   const attrs = getPositionAttributes(position);
@@ -858,13 +873,9 @@ const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
     }
   };
 
-  const centerOnPopup = (targetZoom = 18) => {
-    const nextZoom = Math.max(map.getZoom(), targetZoom);
-    map.flyTo(latLng, nextZoom, { animate: true, duration: 0.68 });
-  };
-
   return (
     <Marker
+      ref={markerRef}
       position={latLng}
       icon={createVehicleIcon(device, position, zoom)}
       eventHandlers={{
@@ -877,7 +888,7 @@ const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
         }
       }}
     >
-      <Popup className="vehicle-leaflet-popup" autoPan={false} keepInView={false} minWidth={280} maxWidth={340}>
+      <Popup className="vehicle-leaflet-popup" autoPan={false} keepInView={false} minWidth={260} maxWidth={318}>
         <div className="vehicle-popup">
           <div className="vehicle-popup-header">
             <div>
@@ -1017,7 +1028,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
               <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
               <MapAutoFit positions={validPositions} enabled={fitMap} singleZoom={17} maxZoom={17} padding={[72, 72]} requestKey={fitRequestId} />
               <MapFocusTarget item={focusedItem} zoom={18} />
-              {items.map((item) => <VehicleMarker key={item.device.id} item={item} onFocus={focusVehicle} />)}
+              {items.map((item) => <VehicleMarker key={item.device.id} item={item} onFocus={focusVehicle} focused={Number(item.device.id) === Number(focusedVehicleId)} />)}
             </MapContainer>
           </div>
 

@@ -2654,3 +2654,175 @@ textarea:focus {
 
 /* RAFACAR CITY LOGIN BACKGROUND END */
 
+/* RAFACAR COMPACT VEHICLE POPUP START */
+
+.vehicle-leaflet-popup {
+  margin-bottom: 10px;
+}
+
+.vehicle-leaflet-popup .leaflet-popup-content-wrapper {
+  width: min(318px, calc(100vw - 28px)) !important;
+  border-radius: 14px !important;
+}
+
+.vehicle-popup {
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 8px !important;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.vehicle-popup-header {
+  gap: 7px !important;
+  margin-bottom: 6px !important;
+  padding-right: 18px !important;
+  align-items: center !important;
+}
+
+.vehicle-popup-header b {
+  font-size: 13.5px !important;
+  line-height: 1.12;
+}
+
+.vehicle-popup-header small {
+  margin-top: 1px !important;
+  font-size: 10.5px;
+}
+
+.vehicle-popup-header .badge {
+  padding: 4px 6px;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.popup-speed-row {
+  grid-template-columns: 74px minmax(0, 1fr) !important;
+  gap: 6px !important;
+  margin-bottom: 6px !important;
+}
+
+.speedometer {
+  min-height: 72px !important;
+  border-radius: 12px !important;
+}
+
+.speedometer strong {
+  font-size: 21px !important;
+}
+
+.speedometer small {
+  font-size: 10px !important;
+}
+
+.popup-status-stack,
+.telemetry-grid {
+  gap: 5px !important;
+}
+
+.telemetry-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.telemetry-tile {
+  min-height: 38px !important;
+  gap: 5px !important;
+  border-radius: 10px !important;
+  padding: 5px 6px !important;
+}
+
+.telemetry-icon {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 8px !important;
+  flex: 0 0 auto;
+}
+
+.telemetry-tile small {
+  font-size: 9.8px !important;
+  line-height: 1.05;
+}
+
+.telemetry-tile b {
+  font-size: 11.3px !important;
+  line-height: 1.12;
+}
+
+.popup-location-line {
+  margin: 6px 0 !important;
+  padding: 6px 7px !important;
+  border-radius: 10px !important;
+  font-size: 11px;
+}
+
+.popup-location-line span {
+  display: -webkit-box;
+  max-height: 30px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
+}
+
+.popup-action-row {
+  margin: 6px 0 4px !important;
+}
+
+.popup-command-btn {
+  min-height: 32px !important;
+  border-radius: 9px !important;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+
+.idle-alert {
+  margin-top: 6px !important;
+  padding: 6px !important;
+  border-radius: 10px !important;
+  font-size: 10.5px !important;
+}
+
+.popup-footer {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px !important;
+  padding-top: 5px !important;
+}
+
+.popup-mini-line {
+  margin-top: 0 !important;
+  gap: 5px !important;
+  align-items: flex-start !important;
+  font-size: 10.5px;
+}
+
+.popup-mini-line small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-height: 1.2;
+}
+
+@media (max-width: 520px) {
+  .vehicle-leaflet-popup .leaflet-popup-content-wrapper {
+    width: min(292px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  .vehicle-popup {
+    padding: 7px !important;
+  }
+
+  .popup-speed-row {
+    grid-template-columns: 70px minmax(0, 1fr) !important;
+  }
+
+  .telemetry-tile {
+    min-height: 36px !important;
+  }
+}
+
+/* RAFACAR COMPACT VEHICLE POPUP END */
+
