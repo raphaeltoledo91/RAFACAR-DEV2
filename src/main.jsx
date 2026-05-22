@@ -38,29 +38,30 @@ import './styles.css';
 const API_TIMEOUT_MS = 18000;
 const DEFAULT_CENTER = [-20.812249, -49.375975];
 const DEFAULT_POLLING_MS = 30000;
+const TARKAN_MAP_ICON_PATH = '/vehicle-icons/tarkan-map';
 
 const ICONS = {
-  motorcycle: ['/vehicle-icons/cars-map/motorcycle_color1.png', '/vehicle-icons/cars-map/motorcycle_base.png', '/vehicle-icons/topview/motorcycle.png'],
-  scooter: ['/vehicle-icons/cars-map/scooter_color1.png', '/vehicle-icons/cars-map/scooter_base.png', '/vehicle-icons/topview/motorcycle.png'],
-  car: ['/vehicle-icons/cars-map/carroPasseio_color1.png', '/vehicle-icons/cars-map/carroPasseio_base.png', '/vehicle-icons/topview/car.png'],
-  utility: ['/vehicle-icons/cars-map/carroUtilitario_color1.png', '/vehicle-icons/cars-map/carroUtilitario_base.png', '/vehicle-icons/topview/van.png'],
-  truck: ['/vehicle-icons/cars-map/truckBau_color1.png', '/vehicle-icons/cars-map/caminhaoBau_color1.png', '/vehicle-icons/topview/truck.png'],
-  truckHorse: ['/vehicle-icons/cars-map/truckCavalo_color1.png', '/vehicle-icons/cars-map/truckCavalo_base.png', '/vehicle-icons/topview/truck.png'],
-  caminhao: ['/vehicle-icons/cars-map/caminhaoBau_color1.png', '/vehicle-icons/cars-map/caminhaoBau_base.png', '/vehicle-icons/topview/truck.png'],
-  bus: ['/vehicle-icons/cars-map/bus_color1.png', '/vehicle-icons/cars-map/bus_base.png', '/vehicle-icons/topview/bus.png'],
-  van: ['/vehicle-icons/cars-map/vanUtilitario_color1.png', '/vehicle-icons/cars-map/vanUtilitario_base.png', '/vehicle-icons/topview/van.png'],
-  pickup: ['/vehicle-icons/cars-map/carroUtilitario_color1.png', '/vehicle-icons/cars-map/offroad_color1.png', '/vehicle-icons/topview/pickup.png'],
-  tractor: ['/vehicle-icons/cars-map/tractor_color1.png', '/vehicle-icons/cars-map/tractor_base.png', '/vehicle-icons/topview/tractor.png'],
-  bicycle: ['/vehicle-icons/cars-map/bicycle_color1.png', '/vehicle-icons/cars-map/bicycle_base.png', '/vehicle-icons/topview/default.png'],
-  person: ['/vehicle-icons/cars-map/person_color1.png', '/vehicle-icons/cars-map/person_base.png', '/vehicle-icons/topview/default.png'],
-  animal: ['/vehicle-icons/cars-map/pet_color1.png', '/vehicle-icons/cars-map/pet_base.png', '/vehicle-icons/topview/default.png'],
-  boat: ['/vehicle-icons/cars-map/boat_color1.png', '/vehicle-icons/cars-map/boat_base.png', '/vehicle-icons/topview/default.png'],
-  ship: ['/vehicle-icons/cars-map/ship_color1.png', '/vehicle-icons/cars-map/ship_base.png', '/vehicle-icons/topview/default.png'],
-  airplane: ['/vehicle-icons/cars-map/plane_color1.png', '/vehicle-icons/cars-map/plane_base.png', '/vehicle-icons/topview/default.png'],
-  helicopter: ['/vehicle-icons/cars-map/helicopter_color1.png', '/vehicle-icons/cars-map/helicopter_base.png', '/vehicle-icons/topview/default.png'],
-  crane: ['/vehicle-icons/cars-map/crane_color1.png', '/vehicle-icons/cars-map/crane_base.png', '/vehicle-icons/topview/default.png'],
-  offroad: ['/vehicle-icons/cars-map/offroad_color1.png', '/vehicle-icons/cars-map/offroad_base.png', '/vehicle-icons/topview/default.png'],
-  default: ['/vehicle-icons/cars-map/default_color1.png', '/vehicle-icons/cars-map/default_base.png', '/vehicle-icons/topview/default.png']
+  motorcycle: [`${TARKAN_MAP_ICON_PATH}/motorcycle_color1.png`, `${TARKAN_MAP_ICON_PATH}/motorcycle_base.png`, '/vehicle-icons/topview/motorcycle.png'],
+  scooter: [`${TARKAN_MAP_ICON_PATH}/scooter_color1.png`, `${TARKAN_MAP_ICON_PATH}/scooter_base.png`, '/vehicle-icons/topview/motorcycle.png'],
+  car: [`${TARKAN_MAP_ICON_PATH}/carroPasseio_color1.png`, `${TARKAN_MAP_ICON_PATH}/carroPasseio_base.png`, '/vehicle-icons/topview/car.png'],
+  utility: [`${TARKAN_MAP_ICON_PATH}/carroUtilitario_color1.png`, `${TARKAN_MAP_ICON_PATH}/carroUtilitario_base.png`, '/vehicle-icons/topview/van.png'],
+  truck: [`${TARKAN_MAP_ICON_PATH}/truckBau_color1.png`, `${TARKAN_MAP_ICON_PATH}/caminhaoBau_color1.png`, '/vehicle-icons/topview/truck.png'],
+  truckHorse: [`${TARKAN_MAP_ICON_PATH}/truckCavalo_color1.png`, `${TARKAN_MAP_ICON_PATH}/truckCavalo_base.png`, '/vehicle-icons/topview/truck.png'],
+  caminhao: [`${TARKAN_MAP_ICON_PATH}/caminhaoBau_color1.png`, `${TARKAN_MAP_ICON_PATH}/caminhaoBau_base.png`, '/vehicle-icons/topview/truck.png'],
+  bus: [`${TARKAN_MAP_ICON_PATH}/bus_color1.png`, `${TARKAN_MAP_ICON_PATH}/bus_base.png`, '/vehicle-icons/topview/bus.png'],
+  van: [`${TARKAN_MAP_ICON_PATH}/vanUtilitario_color1.png`, `${TARKAN_MAP_ICON_PATH}/vanUtilitario_base.png`, '/vehicle-icons/topview/van.png'],
+  pickup: [`${TARKAN_MAP_ICON_PATH}/carroUtilitario_color1.png`, `${TARKAN_MAP_ICON_PATH}/offroad_color1.png`, '/vehicle-icons/topview/pickup.png'],
+  tractor: [`${TARKAN_MAP_ICON_PATH}/tractor_color1.png`, `${TARKAN_MAP_ICON_PATH}/tractor_base.png`, '/vehicle-icons/topview/tractor.png'],
+  bicycle: [`${TARKAN_MAP_ICON_PATH}/bicycle_color1.png`, `${TARKAN_MAP_ICON_PATH}/bicycle_base.png`, '/vehicle-icons/topview/default.png'],
+  person: [`${TARKAN_MAP_ICON_PATH}/person_color1.png`, `${TARKAN_MAP_ICON_PATH}/person_base.png`, '/vehicle-icons/topview/default.png'],
+  animal: [`${TARKAN_MAP_ICON_PATH}/pet_color1.png`, `${TARKAN_MAP_ICON_PATH}/pet_base.png`, '/vehicle-icons/topview/default.png'],
+  boat: [`${TARKAN_MAP_ICON_PATH}/boat_color1.png`, `${TARKAN_MAP_ICON_PATH}/boat_base.png`, '/vehicle-icons/topview/default.png'],
+  ship: [`${TARKAN_MAP_ICON_PATH}/ship_color1.png`, `${TARKAN_MAP_ICON_PATH}/ship_base.png`, '/vehicle-icons/topview/default.png'],
+  airplane: [`${TARKAN_MAP_ICON_PATH}/plane_color1.png`, `${TARKAN_MAP_ICON_PATH}/plane_base.png`, '/vehicle-icons/topview/default.png'],
+  helicopter: [`${TARKAN_MAP_ICON_PATH}/helicopter_color1.png`, `${TARKAN_MAP_ICON_PATH}/helicopter_base.png`, '/vehicle-icons/topview/default.png'],
+  crane: [`${TARKAN_MAP_ICON_PATH}/crane_color1.png`, `${TARKAN_MAP_ICON_PATH}/crane_base.png`, '/vehicle-icons/topview/default.png'],
+  offroad: [`${TARKAN_MAP_ICON_PATH}/offroad_color1.png`, `${TARKAN_MAP_ICON_PATH}/offroad_base.png`, '/vehicle-icons/topview/default.png'],
+  default: [`${TARKAN_MAP_ICON_PATH}/default_color1.png`, `${TARKAN_MAP_ICON_PATH}/default_base.png`, '/vehicle-icons/topview/default.png']
 };
 
 const MAP_LAYERS = {
@@ -658,7 +659,6 @@ function vehicleSvgMarkup(category, state, status, course, title, label, size = 
     <div class="vehicle-svg-marker movement-${escapeHtml(state)} status-${escapeHtml(status)} ${escapeHtml(markerClass)} ${blocked ? 'is-blocked' : 'is-free'}" title="${escapeHtml(title)}" style="--marker-size:${size}px">
       <div class="vehicle-svg-pulse"></div>
       <div class="vehicle-image-core" role="img" aria-label="${escapeHtml(title)}" style="transform: rotate(${safeCourse(course)}deg)">
-        <span class="vehicle-image-halo"></span>
         <img class="vehicle-image-img" src="${escapeHtml(image)}" alt="" loading="eager" decoding="async" />
       </div>
       <span class="vehicle-svg-status"></span>
@@ -765,7 +765,7 @@ function Badge({ tone = 'info', children }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
 
-function MapAutoFit({ positions, enabled = true, singleZoom = 18, maxZoom = 18, padding = [64, 64] }) {
+function MapAutoFit({ positions, enabled = true, singleZoom = 18, maxZoom = 18, padding = [64, 64], requestKey = 0 }) {
   const map = useMap();
   useEffect(() => {
     if (!enabled || !Array.isArray(positions) || positions.length === 0) return;
@@ -780,7 +780,7 @@ function MapAutoFit({ positions, enabled = true, singleZoom = 18, maxZoom = 18, 
       if (map.getZoom() < 15) map.setZoom(15, { animate: true });
     }, 360);
     return () => clearTimeout(timer);
-  }, [enabled, map, positions, singleZoom, maxZoom, padding]);
+  }, [enabled, map, positions, singleZoom, maxZoom, padding, requestKey]);
   return null;
 }
 
@@ -877,7 +877,7 @@ const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
         }
       }}
     >
-      <Popup className="vehicle-leaflet-popup" autoPan={false} keepInView={false} minWidth={300} maxWidth={360}>
+      <Popup className="vehicle-leaflet-popup" autoPan={false} keepInView={false} minWidth={280} maxWidth={340}>
         <div className="vehicle-popup">
           <div className="vehicle-popup-header">
             <div>
@@ -970,13 +970,20 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
   const idle = items.filter(({ device, position }) => movementState(device, position) === 'idle').length;
   const stopped = items.filter(({ device, position }) => movementState(device, position) === 'stopped').length;
   const focusedItem = items.find(({ device, position }) => Number(device.id) === Number(focusedVehicleId) && isValidPosition(position)) || null;
+  const [fitRequestId, setFitRequestId] = useState(0);
   const focusVehicle = useCallback((vehicleId) => {
     setFocusedVehicleId(Number(vehicleId));
     setFitMap(false);
   }, [setFitMap, setFocusedVehicleId]);
-  const toggleAutoFit = useCallback(() => {
+  const fitAllVehicles = useCallback(() => {
     setFocusedVehicleId(null);
-    setFitMap((value) => !value);
+    setFitMap(true);
+    setFitRequestId((value) => value + 1);
+  }, [setFitMap, setFocusedVehicleId]);
+  useEffect(() => {
+    setFocusedVehicleId(null);
+    setFitMap(true);
+    setFitRequestId((value) => value + 1);
   }, [setFitMap, setFocusedVehicleId]);
 
   return (
@@ -995,8 +1002,8 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
               <select value={layerKey} onChange={(event) => setLayerKey(event.target.value)} aria-label="Camada do mapa">
                 {Object.entries(MAP_LAYERS).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
               </select>
-              <button className="ghost-btn" onClick={toggleAutoFit} title="Centralizar mapa">
-                <MapPinned size={17} /> {fitMap ? 'Auto-fit ligado' : 'Auto-fit desligado'}
+              <button className="ghost-btn" onClick={fitAllVehicles} title="Centralizar frota no mapa">
+                <MapPinned size={17} /> {fitMap ? 'Frota centralizada' : 'Centralizar frota'}
               </button>
               <button className="ghost-btn" onClick={() => setFleetPanelHidden((value) => !value)} title={fleetPanelHidden ? 'Mostrar lista lateral da frota' : 'Esconder lista lateral da frota'}>
                 <Car size={17} /> {fleetPanelHidden ? 'Mostrar frota' : 'Esconder frota'}
@@ -1008,7 +1015,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
           <div className="map-wrap full-background-map">
             <MapContainer center={getLatLng(validPositions[0]) || DEFAULT_CENTER} zoom={12} scrollWheelZoom>
               <TileLayer attribution={layer.attribution} url={layer.url} maxZoom={20} />
-              <MapAutoFit positions={validPositions} enabled={fitMap} singleZoom={17} maxZoom={17} padding={[72, 72]} />
+              <MapAutoFit positions={validPositions} enabled={fitMap} singleZoom={17} maxZoom={17} padding={[72, 72]} requestKey={fitRequestId} />
               <MapFocusTarget item={focusedItem} zoom={18} />
               {items.map((item) => <VehicleMarker key={item.device.id} item={item} onFocus={focusVehicle} />)}
             </MapContainer>
@@ -1019,7 +1026,7 @@ function Dashboard({ items, stats, layerKey, setLayerKey, fitMap, setFitMap, sea
               <button type="button" title="Mostrar frota" aria-label="Mostrar frota" onClick={() => setFleetPanelHidden(false)}>
                 <Car size={19} />
               </button>
-              <button type="button" title="Centralizar veículos" aria-label="Centralizar veículos" onClick={() => setFitMap((value) => !value)}>
+              <button type="button" title="Centralizar veículos" aria-label="Centralizar veículos" onClick={fitAllVehicles}>
                 <MapPinned size={19} />
               </button>
             </div>

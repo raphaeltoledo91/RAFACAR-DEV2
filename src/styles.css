@@ -2281,24 +2281,13 @@ textarea:focus {
   overflow: visible;
 }
 
-.vehicle-image-halo {
-  position: absolute;
-  inset: 8%;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .18), transparent 42%),
-    radial-gradient(circle, color-mix(in srgb, var(--vehicle-accent) 24%, transparent), transparent 66%);
-  border: 2px solid color-mix(in srgb, var(--vehicle-accent) 58%, rgba(255, 255, 255, .34));
-  box-shadow: 0 0 18px color-mix(in srgb, var(--vehicle-accent) 38%, transparent);
-}
-
 .vehicle-image-img {
   position: relative;
   z-index: 2;
-  width: 88%;
-  height: 88%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .36));
+  filter: drop-shadow(0 9px 7px rgba(0, 0, 0, .34));
   pointer-events: none;
   user-select: none;
 }
@@ -2306,11 +2295,6 @@ textarea:focus {
 .vehicle-svg-marker.marker-compact .vehicle-image-img {
   width: 92%;
   height: 92%;
-}
-
-.vehicle-svg-marker.is-blocked .vehicle-image-halo {
-  border-color: rgba(214, 168, 74, .62);
-  box-shadow: 0 0 20px rgba(214, 168, 74, .42);
 }
 
 .vehicle-leaflet-popup {
@@ -2430,4 +2414,199 @@ textarea:focus {
 }
 
 /* RAFACAR VEHICLE PNG MARKERS AND POPUP CENTERING PATCH END */
+
+/* RAFACAR TARKAN MAP REFINEMENT START */
+
+.vehicle-svg-marker {
+  background: transparent !important;
+  border: 0 !important;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 13px 12px rgba(0, 0, 0, .42));
+}
+
+.vehicle-svg-pulse {
+  display: none !important;
+}
+
+.vehicle-image-core {
+  width: calc(var(--marker-size, 74px) - 2px);
+  height: calc(var(--marker-size, 74px) - 2px);
+}
+
+.vehicle-svg-status {
+  right: 10%;
+  bottom: 10%;
+  width: clamp(10px, 19%, 16px);
+  height: clamp(10px, 19%, 16px);
+  border: 2px solid rgba(7, 16, 19, .88);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .10), 0 0 14px color-mix(in srgb, var(--vehicle-accent) 50%, transparent);
+}
+
+.vehicle-svg-label {
+  bottom: -13px;
+  border-color: rgba(61, 168, 159, .34) !important;
+  background: rgba(7, 16, 19, .72);
+  color: #eafffb;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.map-side-icon-column {
+  border-color: rgba(61, 168, 159, .32);
+  background: rgba(7, 16, 19, .62);
+}
+
+.map-side-icon-column button,
+.map-app-shell .map-toolbar .ghost-btn {
+  border-color: rgba(61, 168, 159, .30) !important;
+  color: #d7fffa;
+  background: linear-gradient(145deg, rgba(18, 31, 34, .74), rgba(7, 16, 19, .64)) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
+}
+
+.map-side-icon-column button:hover,
+.map-app-shell .map-toolbar .ghost-btn:hover {
+  border-color: rgba(214, 168, 74, .46) !important;
+  color: #fff4d7;
+  background: linear-gradient(145deg, rgba(31, 118, 109, .58), rgba(18, 61, 58, .54)) !important;
+}
+
+.vehicle-leaflet-popup .leaflet-popup-content-wrapper {
+  width: min(348px, calc(100vw - 40px));
+  border: 1px solid rgba(61, 168, 159, .24) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, rgba(7, 16, 19, .91), rgba(18, 31, 34, .86)) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .42);
+}
+
+.vehicle-leaflet-popup .leaflet-popup-tip {
+  border: 1px solid rgba(61, 168, 159, .18) !important;
+  background: rgba(18, 31, 34, .92) !important;
+}
+
+.vehicle-leaflet-popup .leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.vehicle-leaflet-popup .leaflet-popup-close-button {
+  color: #d7fffa !important;
+}
+
+.vehicle-popup {
+  max-height: min(68dvh, 500px);
+  padding: 10px;
+}
+
+.vehicle-popup-header {
+  padding-right: 16px;
+}
+
+.vehicle-popup-header b {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.vehicle-popup-header small {
+  color: rgba(215, 255, 250, .66);
+}
+
+.popup-speed-row {
+  grid-template-columns: minmax(88px, .72fr) minmax(0, 1fr);
+}
+
+.speedometer {
+  min-height: 94px;
+}
+
+.speedometer strong {
+  font-size: 28px;
+}
+
+.popup-location-line,
+.telemetry-tile {
+  border-color: rgba(61, 168, 159, .18) !important;
+  background: rgba(255, 255, 255, .045) !important;
+}
+
+:root[data-theme="light"] .map-side-icon-column {
+  border-color: rgba(31, 118, 109, .24);
+  background: rgba(247, 252, 250, .70);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .13);
+}
+
+:root[data-theme="light"] .map-side-icon-column button,
+:root[data-theme="light"] .map-app-shell .map-toolbar .ghost-btn {
+  border-color: rgba(31, 118, 109, .24) !important;
+  color: #123d3a;
+  background: rgba(255, 255, 255, .72) !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .10);
+}
+
+:root[data-theme="light"] .map-side-icon-column button:hover,
+:root[data-theme="light"] .map-app-shell .map-toolbar .ghost-btn:hover {
+  border-color: rgba(214, 168, 74, .44) !important;
+  color: #5f421a;
+  background: rgba(255, 250, 239, .84) !important;
+}
+
+:root[data-theme="light"] .vehicle-leaflet-popup .leaflet-popup-content-wrapper {
+  border-color: rgba(31, 118, 109, .22) !important;
+  background: rgba(246, 251, 249, .94) !important;
+  color: #10201f !important;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, .18);
+}
+
+:root[data-theme="light"] .vehicle-leaflet-popup .leaflet-popup-tip {
+  border-color: rgba(31, 118, 109, .16) !important;
+  background: rgba(246, 251, 249, .94) !important;
+}
+
+:root[data-theme="light"] .vehicle-leaflet-popup .leaflet-popup-close-button {
+  color: #123d3a !important;
+}
+
+:root[data-theme="light"] .vehicle-popup-header small,
+:root[data-theme="light"] .popup-location-line,
+:root[data-theme="light"] .telemetry-tile small {
+  color: #4e625f !important;
+}
+
+:root[data-theme="light"] .popup-location-line,
+:root[data-theme="light"] .telemetry-tile,
+:root[data-theme="light"] .speedometer {
+  border-color: rgba(31, 118, 109, .16) !important;
+  background: rgba(255, 255, 255, .66) !important;
+}
+
+:root[data-theme="light"] .telemetry-tile b,
+:root[data-theme="light"] .vehicle-popup-header b {
+  color: #10201f !important;
+}
+
+:root[data-theme="light"] .popup-command-btn.lock {
+  background: linear-gradient(135deg, #9a6c2f, #5f421a) !important;
+}
+
+:root[data-theme="light"] .popup-command-btn.unlock {
+  background: linear-gradient(135deg, #227e5e, #123d3a) !important;
+}
+
+@media (max-width: 520px) {
+  .vehicle-leaflet-popup .leaflet-popup-content-wrapper {
+    width: min(312px, calc(100vw - 28px));
+    max-width: calc(100vw - 28px);
+  }
+
+  .vehicle-popup {
+    max-height: min(62dvh, 480px);
+    padding: 9px;
+  }
+
+  .popup-speed-row {
+    grid-template-columns: 86px minmax(0, 1fr);
+  }
+}
+
+/* RAFACAR TARKAN MAP REFINEMENT END */
 
