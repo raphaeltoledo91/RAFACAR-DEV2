@@ -1822,3 +1822,449 @@ textarea:focus {
 
 /* RAFACAR BRAND, MOBILE AND INTEGRATIONS PATCH END */
 
+/* RAFACAR CALM GLASS REFINEMENT START */
+
+:root {
+  --brand-red: #1f766d;
+  --brand-red-2: #4aa69b;
+  --brand-red-dark: #123d3a;
+  --brand-black: #071013;
+  --brand-white: #f8fafc;
+  --brand-display-font: "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --blue: #3da89f;
+  --red: #c0843c;
+  --green: #46b37f;
+  --yellow: #d6a84a;
+  --accent-moving: #46b37f;
+  --accent-stopped: #c0843c;
+  --accent-idle: #3da89f;
+  --accent-unknown: #d6a84a;
+  --glass: rgba(7, 16, 19, .62);
+  --glass-strong: rgba(7, 16, 19, .78);
+}
+
+:root[data-theme="light"] {
+  --blue: #237b73;
+  --red: #b87a32;
+  --green: #2f8f69;
+  --yellow: #b6892f;
+  --accent-moving: #2f8f69;
+  --accent-stopped: #b87a32;
+  --accent-idle: #237b73;
+  --accent-unknown: #b6892f;
+  --glass: rgba(255, 255, 255, .58);
+  --glass-strong: rgba(255, 255, 255, .72);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(61, 168, 159, .18), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(214, 168, 74, .10), transparent 26%),
+    linear-gradient(180deg, #071013, #101b1f 52%, #071013);
+}
+
+.topbar h2,
+.panel h3,
+.fleet-overlay-header h3,
+.login-brand-subtitle,
+.nav button,
+.primary-btn,
+.danger-btn,
+.popup-command-btn,
+.integration-empty-state h4,
+.vehicle-svg-label {
+  font-family: var(--brand-display-font);
+  font-weight: 650;
+  letter-spacing: .015em;
+}
+
+.topbar h2,
+.panel h3,
+.fleet-overlay-header h3 {
+  text-transform: none;
+}
+
+.nav button,
+.primary-btn,
+.danger-btn,
+.popup-command-btn,
+.login-brand-subtitle {
+  text-transform: none;
+}
+
+.primary-btn,
+.login-submit {
+  background: linear-gradient(135deg, #1f766d, #4aa69b) !important;
+  box-shadow: 0 14px 30px rgba(31, 118, 109, .24) !important;
+  font-weight: 700;
+}
+
+.primary-btn:hover,
+.login-submit:hover {
+  box-shadow: 0 16px 34px rgba(31, 118, 109, .32) !important;
+}
+
+.danger-btn {
+  color: #fdecc8;
+  background: rgba(192, 132, 60, .13) !important;
+  border-color: rgba(192, 132, 60, .28) !important;
+}
+
+.nav button.active,
+.floating-icon-rail button.active {
+  background: linear-gradient(135deg, rgba(31, 118, 109, .78), rgba(18, 61, 58, .76)) !important;
+  border-color: rgba(105, 190, 178, .42) !important;
+}
+
+.ghost-btn:hover,
+.nav button:hover,
+.icon-only-btn:hover {
+  border-color: rgba(61, 168, 159, .46);
+  background: rgba(61, 168, 159, .11);
+}
+
+.badge.info,
+.report-point-icon.info {
+  color: #b7f0e7;
+  border-color: rgba(61, 168, 159, .34);
+}
+
+.badge.bad,
+.report-point-icon.bad {
+  color: #fdecc8;
+  border-color: rgba(192, 132, 60, .38);
+}
+
+.error-box {
+  border-color: rgba(192, 132, 60, .35);
+  background: rgba(192, 132, 60, .11);
+  color: #fdecc8;
+}
+
+.login-shell {
+  background: #071013 !important;
+}
+
+.login-shell::before {
+  opacity: .76;
+  filter: saturate(.95) contrast(1.02);
+}
+
+.login-shell::after {
+  background:
+    linear-gradient(90deg, rgba(7, 16, 19, .90), rgba(7, 16, 19, .66) 52%, rgba(18, 61, 58, .34)),
+    radial-gradient(circle at 50% 18%, rgba(105, 190, 178, .10), transparent 34%);
+}
+
+.login-card {
+  border-color: rgba(61, 168, 159, .30);
+  background: linear-gradient(155deg, rgba(7, 16, 19, .82), rgba(18, 31, 34, .68));
+  backdrop-filter: blur(20px);
+  box-shadow: 0 28px 88px rgba(0, 0, 0, .46), 0 0 0 1px rgba(255, 255, 255, .035) inset;
+}
+
+.login-form input:focus,
+select:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid rgba(61, 168, 159, .42);
+  border-color: rgba(61, 168, 159, .52);
+}
+
+.login-security {
+  border-top-color: rgba(61, 168, 159, .18);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(61, 168, 159, .12), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(214, 168, 74, .10), transparent 26%),
+    linear-gradient(180deg, #eef5f4, #dfe9e7);
+}
+
+:root[data-theme="light"] .login-shell::after {
+  background:
+    linear-gradient(90deg, rgba(235, 245, 243, .62), rgba(235, 245, 243, .42) 52%, rgba(31, 118, 109, .12)),
+    radial-gradient(circle at 50% 18%, rgba(31, 118, 109, .10), transparent 34%);
+}
+
+:root[data-theme="light"] .login-card,
+:root[data-theme="light"] .sidebar,
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .map-app-shell .sidebar,
+:root[data-theme="light"] .map-app-shell .fleet-overlay-panel,
+:root[data-theme="light"] .map-app-shell .dashboard-compact-grid .card {
+  background: rgba(255, 255, 255, .62) !important;
+  border-color: rgba(31, 118, 109, .20) !important;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .10);
+}
+
+.map-app-shell,
+.dashboard-screen,
+.map-stage-panel {
+  background: #071013;
+}
+
+.map-app-shell .sidebar,
+.map-app-shell .fleet-overlay-panel,
+.map-app-shell .dashboard-compact-grid .card,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  border-color: rgba(61, 168, 159, .20) !important;
+  background: linear-gradient(145deg, rgba(7, 16, 19, .70), rgba(18, 31, 34, .58)) !important;
+  backdrop-filter: blur(18px);
+}
+
+.map-app-shell .sidebar {
+  width: min(274px, calc(100vw - 28px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  padding: 13px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.map-app-shell .brand-company {
+  margin-bottom: 2px;
+  gap: 8px;
+}
+
+.brand-logo-block.compact .brand-logo-mark {
+  width: min(100%, 180px);
+}
+
+.sidebar-user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid rgba(61, 168, 159, .24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .055);
+}
+
+.brand-user {
+  color: var(--text) !important;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.sidebar-logout-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  border: 1px solid rgba(214, 168, 74, .28);
+  border-radius: 10px;
+  padding: 0 8px;
+  color: #fdecc8;
+  background: rgba(214, 168, 74, .10);
+  cursor: pointer;
+  font-family: var(--brand-display-font);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.sidebar-logout-mini:hover {
+  border-color: rgba(214, 168, 74, .48);
+  background: rgba(214, 168, 74, .16);
+}
+
+:root[data-theme="light"] .sidebar-user-row {
+  background: rgba(255, 255, 255, .46);
+  border-color: rgba(31, 118, 109, .18);
+}
+
+:root[data-theme="light"] .sidebar-logout-mini {
+  color: #815421;
+  background: rgba(214, 168, 74, .14);
+}
+
+.nav {
+  gap: 6px;
+}
+
+.nav button {
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 630;
+}
+
+.map-app-shell .sidebar .nav,
+.map-app-shell .sidebar-toolbox {
+  overflow: visible;
+}
+
+.sidebar-status-stack {
+  display: grid;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.sidebar-support-row {
+  margin-top: 2px;
+}
+
+.whatsapp-support.compact {
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 12px;
+}
+
+.sidebar-toolbox {
+  gap: 7px;
+  padding-top: 8px;
+}
+
+.sidebar-toolbox button {
+  min-height: 36px;
+  font-size: 12px;
+  border-radius: 12px;
+}
+
+.map-app-shell .floating-icon-rail,
+.map-side-icon-column button {
+  border-color: rgba(61, 168, 159, .26);
+  background: rgba(7, 16, 19, .66);
+  backdrop-filter: blur(18px);
+}
+
+.vehicle-svg-halo {
+  fill: rgba(7, 16, 19, .88);
+}
+
+.vehicle-svg-marker.is-blocked .vehicle-svg-status {
+  background: #d6a84a;
+  box-shadow: 0 0 18px rgba(214, 168, 74, .58);
+}
+
+.vehicle-svg-label,
+.vehicle-list-row:hover,
+.vehicle-list-row.is-selected {
+  border-color: rgba(61, 168, 159, .42);
+}
+
+.vehicle-list-row:hover,
+.vehicle-list-row.is-selected {
+  background: linear-gradient(135deg, rgba(61, 168, 159, .13), rgba(15, 23, 42, .58));
+}
+
+.popup-command-btn {
+  font-weight: 700;
+  letter-spacing: .015em;
+}
+
+.popup-command-btn.lock {
+  background: linear-gradient(135deg, #c0843c, #81602c);
+}
+
+.popup-command-btn.unlock {
+  background: linear-gradient(135deg, #2f8f69, #155e54);
+}
+
+.popup-command-message.bad {
+  color: #fdecc8;
+  background: rgba(192, 132, 60, .14);
+}
+
+.integration-empty-state {
+  border-color: rgba(61, 168, 159, .34);
+  background: linear-gradient(145deg, rgba(61, 168, 159, .10), rgba(255, 255, 255, .035));
+}
+
+.integration-empty-icon {
+  background: linear-gradient(135deg, #1f766d, #123d3a);
+  box-shadow: 0 18px 38px rgba(31, 118, 109, .22);
+}
+
+.reports-actions .primary-btn:first-child {
+  background: linear-gradient(135deg, rgba(61, 168, 159, .94), rgba(47, 143, 105, .88)) !important;
+}
+
+.report-point-icon.info {
+  background: #3da89f;
+}
+
+.report-point-icon.bad {
+  background: #c0843c;
+}
+
+.speedometer {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(61, 168, 159, .18), transparent 54%),
+    linear-gradient(145deg, rgba(18, 31, 34, .78), rgba(7, 16, 19, .72)) !important;
+  border-color: rgba(61, 168, 159, .26) !important;
+}
+
+.telemetry-tile.info {
+  border-color: rgba(61, 168, 159, .28) !important;
+  color: #b7f0e7 !important;
+}
+
+.telemetry-tile.bad {
+  border-color: rgba(192, 132, 60, .34) !important;
+  color: #fdecc8 !important;
+}
+
+.idle-alert {
+  color: #b7f0e7 !important;
+  background: rgba(61, 168, 159, .10) !important;
+  border-color: rgba(61, 168, 159, .24) !important;
+}
+
+.report-route-line {
+  stroke: #3da89f;
+  filter: drop-shadow(0 0 10px rgba(61, 168, 159, .42));
+}
+
+.report-point-icon {
+  font-weight: 700;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .32), 0 0 18px rgba(61, 168, 159, .24);
+  background: #3da89f;
+}
+
+.card strong,
+.row b,
+.vehicle-popup-header b,
+.telemetry-tile b,
+.speedometer strong {
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .map-app-shell .sidebar {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .brand-logo-block.compact .brand-logo-mark {
+    width: min(100%, 168px);
+  }
+
+  .nav button {
+    min-height: 34px;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .sidebar-status-stack,
+  .sidebar-support-row {
+    margin-top: 0;
+  }
+
+  .login-shell::after {
+    background:
+      linear-gradient(180deg, rgba(7, 16, 19, .84), rgba(7, 16, 19, .64) 50%, rgba(18, 61, 58, .26)),
+      radial-gradient(circle at 50% 12%, rgba(105, 190, 178, .11), transparent 30%);
+  }
+}
+
+/* RAFACAR CALM GLASS REFINEMENT END */
+

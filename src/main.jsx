@@ -1795,7 +1795,13 @@ function App() {
       <aside className="sidebar">
         <div className="brand brand-company">
           <BrandLogo compact />
-          <span className="brand-user">{auth.user?.name || auth.user?.email || 'Usuário Traccar'}</span>
+          <div className="sidebar-user-row">
+            <span className="brand-user">{auth.user?.name || auth.user?.email || 'Usuario Traccar'}</span>
+            <button className="sidebar-logout-mini" type="button" onClick={handleLogout} title="Sair">
+              <LogOut size={14} />
+              <span>Sair</span>
+            </button>
+          </div>
         </div>
         <nav className="nav">
           {tabs.map(([key, label, Icon]) => (
@@ -1804,7 +1810,7 @@ function App() {
             </button>
           ))}
         </nav>
-        <div style={{ marginTop: 18, display: 'grid', gap: 10 }}>
+        <div className="sidebar-status-stack">
           <Badge tone={health?.ok ? 'good' : 'warn'}><ShieldCheck size={14} /> Proxy {health?.ok ? 'OK' : 'verificando'}</Badge>
           <Badge tone="info"><Activity size={14} /> {lastUpdate ? `Atualizado ${formatTime(lastUpdate)}` : 'Sem atualização'}</Badge>
         </div>
@@ -1819,7 +1825,6 @@ function App() {
           <button className="primary-btn" onClick={() => loadData({ silent: true })} disabled={refreshing}>
             <RefreshCw size={17} /> {refreshing ? 'Atualizando...' : 'Atualizar'}
           </button>
-          <button className="danger-btn" onClick={handleLogout}><LogOut size={17} /> Sair</button>
         </div>
       </aside>
       )}
