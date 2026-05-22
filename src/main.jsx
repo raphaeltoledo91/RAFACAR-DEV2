@@ -40,27 +40,27 @@ const DEFAULT_CENTER = [-20.812249, -49.375975];
 const DEFAULT_POLLING_MS = 30000;
 
 const ICONS = {
-  motorcycle: ['/vehicle-icons/cars2/motorcycle_base.png', '/vehicle-icons/cars/motorcycle_base.png', '/vehicle-icons/topview/motorcycle.png'],
-  scooter: ['/vehicle-icons/cars2/scooter_base.png', '/vehicle-icons/cars/scooter_base.png', '/vehicle-icons/topview/motorcycle.png'],
-  car: ['/vehicle-icons/cars2/carropasseio_base.png', '/vehicle-icons/cars/carroPasseio_base.png', '/vehicle-icons/topview/car.png'],
-  utility: ['/vehicle-icons/cars2/carroutilitario_base.png', '/vehicle-icons/cars/carroUtilitario_base.png', '/vehicle-icons/topview/van.png'],
-  truck: ['/vehicle-icons/cars2/truckbau_base.png', '/vehicle-icons/cars/truckBau_base.png', '/vehicle-icons/topview/truck.png'],
-  truckHorse: ['/vehicle-icons/cars2/truckcavalo_base.png', '/vehicle-icons/cars/truckCavalo_base.png', '/vehicle-icons/topview/truck.png'],
-  caminhao: ['/vehicle-icons/cars2/caminhaobau_base.png', '/vehicle-icons/cars/caminhaoBau_base.png', '/vehicle-icons/topview/truck.png'],
-  bus: ['/vehicle-icons/cars2/bus_base.png', '/vehicle-icons/cars/bus_base.png', '/vehicle-icons/topview/bus.png'],
-  van: ['/vehicle-icons/cars2/vanutilitario_base.png', '/vehicle-icons/cars/vanUtilitario_base.png', '/vehicle-icons/topview/van.png'],
-  pickup: ['/vehicle-icons/topview/pickup.png', '/vehicle-icons/cars2/carroutilitario_base.png', '/vehicle-icons/cars/carroUtilitario_base.png'],
-  tractor: ['/vehicle-icons/cars2/tractor_base.png', '/vehicle-icons/cars/tractor_base.png', '/vehicle-icons/topview/tractor.png'],
-  bicycle: ['/vehicle-icons/cars2/bicycle_base.png', '/vehicle-icons/cars/bicycle_base.png', '/vehicle-icons/topview/default.png'],
-  person: ['/vehicle-icons/cars2/person_base.png', '/vehicle-icons/cars/person_base.png', '/vehicle-icons/topview/default.png'],
-  animal: ['/vehicle-icons/cars2/pet_base.png', '/vehicle-icons/cars/pet_base.png', '/vehicle-icons/topview/default.png'],
-  boat: ['/vehicle-icons/cars2/boat_base.png', '/vehicle-icons/cars/boat_base.png', '/vehicle-icons/topview/default.png'],
-  ship: ['/vehicle-icons/cars2/ship_base.png', '/vehicle-icons/cars/ship_base.png', '/vehicle-icons/topview/default.png'],
-  airplane: ['/vehicle-icons/cars2/plane_base.png', '/vehicle-icons/cars/plane_base.png', '/vehicle-icons/topview/default.png'],
-  helicopter: ['/vehicle-icons/cars2/helicopter_base.png', '/vehicle-icons/cars/helicopter_base.png', '/vehicle-icons/topview/default.png'],
-  crane: ['/vehicle-icons/cars2/crane_base.png', '/vehicle-icons/cars/crane_base.png', '/vehicle-icons/topview/default.png'],
-  offroad: ['/vehicle-icons/cars2/offroad_base.png', '/vehicle-icons/cars/offroad_base.png', '/vehicle-icons/topview/default.png'],
-  default: ['/vehicle-icons/topview/default.png', '/vehicle-icons/cars2/default_base.png', '/vehicle-icons/cars/default_base.png']
+  motorcycle: ['/vehicle-icons/cars-map/motorcycle_color1.png', '/vehicle-icons/cars-map/motorcycle_base.png', '/vehicle-icons/topview/motorcycle.png'],
+  scooter: ['/vehicle-icons/cars-map/scooter_color1.png', '/vehicle-icons/cars-map/scooter_base.png', '/vehicle-icons/topview/motorcycle.png'],
+  car: ['/vehicle-icons/cars-map/carroPasseio_color1.png', '/vehicle-icons/cars-map/carroPasseio_base.png', '/vehicle-icons/topview/car.png'],
+  utility: ['/vehicle-icons/cars-map/carroUtilitario_color1.png', '/vehicle-icons/cars-map/carroUtilitario_base.png', '/vehicle-icons/topview/van.png'],
+  truck: ['/vehicle-icons/cars-map/truckBau_color1.png', '/vehicle-icons/cars-map/caminhaoBau_color1.png', '/vehicle-icons/topview/truck.png'],
+  truckHorse: ['/vehicle-icons/cars-map/truckCavalo_color1.png', '/vehicle-icons/cars-map/truckCavalo_base.png', '/vehicle-icons/topview/truck.png'],
+  caminhao: ['/vehicle-icons/cars-map/caminhaoBau_color1.png', '/vehicle-icons/cars-map/caminhaoBau_base.png', '/vehicle-icons/topview/truck.png'],
+  bus: ['/vehicle-icons/cars-map/bus_color1.png', '/vehicle-icons/cars-map/bus_base.png', '/vehicle-icons/topview/bus.png'],
+  van: ['/vehicle-icons/cars-map/vanUtilitario_color1.png', '/vehicle-icons/cars-map/vanUtilitario_base.png', '/vehicle-icons/topview/van.png'],
+  pickup: ['/vehicle-icons/cars-map/carroUtilitario_color1.png', '/vehicle-icons/cars-map/offroad_color1.png', '/vehicle-icons/topview/pickup.png'],
+  tractor: ['/vehicle-icons/cars-map/tractor_color1.png', '/vehicle-icons/cars-map/tractor_base.png', '/vehicle-icons/topview/tractor.png'],
+  bicycle: ['/vehicle-icons/cars-map/bicycle_color1.png', '/vehicle-icons/cars-map/bicycle_base.png', '/vehicle-icons/topview/default.png'],
+  person: ['/vehicle-icons/cars-map/person_color1.png', '/vehicle-icons/cars-map/person_base.png', '/vehicle-icons/topview/default.png'],
+  animal: ['/vehicle-icons/cars-map/pet_color1.png', '/vehicle-icons/cars-map/pet_base.png', '/vehicle-icons/topview/default.png'],
+  boat: ['/vehicle-icons/cars-map/boat_color1.png', '/vehicle-icons/cars-map/boat_base.png', '/vehicle-icons/topview/default.png'],
+  ship: ['/vehicle-icons/cars-map/ship_color1.png', '/vehicle-icons/cars-map/ship_base.png', '/vehicle-icons/topview/default.png'],
+  airplane: ['/vehicle-icons/cars-map/plane_color1.png', '/vehicle-icons/cars-map/plane_base.png', '/vehicle-icons/topview/default.png'],
+  helicopter: ['/vehicle-icons/cars-map/helicopter_color1.png', '/vehicle-icons/cars-map/helicopter_base.png', '/vehicle-icons/topview/default.png'],
+  crane: ['/vehicle-icons/cars-map/crane_color1.png', '/vehicle-icons/cars-map/crane_base.png', '/vehicle-icons/topview/default.png'],
+  offroad: ['/vehicle-icons/cars-map/offroad_color1.png', '/vehicle-icons/cars-map/offroad_base.png', '/vehicle-icons/topview/default.png'],
+  default: ['/vehicle-icons/cars-map/default_color1.png', '/vehicle-icons/cars-map/default_base.png', '/vehicle-icons/topview/default.png']
 };
 
 const MAP_LAYERS = {
@@ -653,14 +653,14 @@ function markerSizeForZoom(zoom = 14) {
 
 function vehicleSvgMarkup(category, state, status, course, title, label, size = 74, blocked = false) {
   const markerClass = size < 62 ? 'marker-compact' : 'marker-detailed';
+  const image = vehicleImage(category);
   return `
     <div class="vehicle-svg-marker movement-${escapeHtml(state)} status-${escapeHtml(status)} ${escapeHtml(markerClass)} ${blocked ? 'is-blocked' : 'is-free'}" title="${escapeHtml(title)}" style="--marker-size:${size}px">
       <div class="vehicle-svg-pulse"></div>
-      <svg class="vehicle-svg-core" viewBox="0 0 70 70" role="img" aria-label="${escapeHtml(title)}" style="transform: rotate(${safeCourse(course)}deg)">
-        <circle class="vehicle-svg-halo" cx="35" cy="35" r="32"></circle>
-        <path class="vehicle-svg-heading" d="M35 3l8 16-8-4-8 4z"></path>
-        <g class="vehicle-svg-body">${vehicleSvgBody(category)}</g>
-      </svg>
+      <div class="vehicle-image-core" role="img" aria-label="${escapeHtml(title)}" style="transform: rotate(${safeCourse(course)}deg)">
+        <span class="vehicle-image-halo"></span>
+        <img class="vehicle-image-img" src="${escapeHtml(image)}" alt="" loading="eager" decoding="async" />
+      </div>
       <span class="vehicle-svg-status"></span>
       <span class="vehicle-svg-label">${escapeHtml(label)}</span>
     </div>
@@ -682,7 +682,7 @@ function createVehicleIcon(device = {}, position = {}, zoom = 14) {
     className: '',
     iconSize: [size, size],
     iconAnchor: [anchor, anchor],
-    popupAnchor: [0, -Math.round(size * 0.48)],
+    popupAnchor: [0, -Math.round(size * 0.56)],
     html: vehicleSvgMarkup(category, state, status, course, title, label, size, isBlocked(device, safePosition))
   });
 }
@@ -858,6 +858,11 @@ const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
     }
   };
 
+  const centerOnPopup = (targetZoom = 18) => {
+    const nextZoom = Math.max(map.getZoom(), targetZoom);
+    map.flyTo(latLng, nextZoom, { animate: true, duration: 0.68 });
+  };
+
   return (
     <Marker
       position={latLng}
@@ -865,11 +870,14 @@ const VehicleMarker = memo(function VehicleMarker({ item, onFocus }) {
       eventHandlers={{
         click: () => {
           onFocus?.(device.id);
-          map.flyTo(latLng, 18, { animate: true, duration: 0.75 });
+          centerOnPopup(18);
+        },
+        popupopen: () => {
+          window.setTimeout(() => centerOnPopup(17), 80);
         }
       }}
     >
-      <Popup>
+      <Popup className="vehicle-leaflet-popup" autoPan={false} keepInView={false} minWidth={300} maxWidth={360}>
         <div className="vehicle-popup">
           <div className="vehicle-popup-header">
             <div>
