@@ -33,7 +33,20 @@ const config = {
   traccarUrl: String(process.env.TRACCAR_URL || localConfig.traccarUrl || 'https://gps2.rafacarrastreadores.com.br').replace(/\/+$/, ''),
   pollingMs: Number(process.env.POLLING_MS || localConfig.pollingMs || 30000),
   allowUnsafeGoogleTiles: String(process.env.ALLOW_UNSAFE_GOOGLE_TILES ?? localConfig.allowUnsafeGoogleTiles ?? 'true') !== 'false',
-  sessionTtlMs: Number(process.env.SESSION_TTL_MS || (Number(localConfig.sessionTtlHours || 8) * 60 * 60 * 1000))
+  sessionTtlMs: Number(process.env.SESSION_TTL_MS || (Number(localConfig.sessionTtlHours || 8) * 60 * 60 * 1000)),
+  publicAppUrl: String(process.env.PUBLIC_APP_URL || localConfig.publicAppUrl || '').replace(/\/+$/, ''),
+  pushover: {
+    token: String(process.env.PUSHOVER_APP_TOKEN || process.env.PUSHOVER_TOKEN || localConfig.pushoverAppToken || localConfig.pushoverToken || ''),
+    user: String(process.env.PUSHOVER_USER_KEY || process.env.PUSHOVER_USER || localConfig.pushoverUserKey || localConfig.pushoverUser || ''),
+    device: String(process.env.PUSHOVER_DEVICE || localConfig.pushoverDevice || ''),
+    sound: String(process.env.PUSHOVER_SOUND || localConfig.pushoverSound || 'pushover'),
+    priority: Number(process.env.PUSHOVER_PRIORITY || localConfig.pushoverPriority || 0)
+  },
+  firebase: {
+    vapidKey: String(process.env.FIREBASE_VAPID_KEY || localConfig.firebaseVapidKey || ''),
+    webConfigJson: String(process.env.FIREBASE_WEB_CONFIG_JSON || localConfig.firebaseWebConfigJson || '')
+  },
+  traccarWebhookSecret: String(process.env.TRACCAR_WEBHOOK_SECRET || localConfig.traccarWebhookSecret || '')
 };
 
 const app = express();
@@ -51,7 +64,23 @@ const COOKIE_NAME = 'rafacar_sid';
 const sessions = new Map();
 
 function isAllowedEndpoint(urlPath) { return endpointAllowList.some((rx) => rx.test(urlPath)); }
-function safePublicConfig(req = null) { return { pollingMs: config.pollingMs, traccarUrl: config.traccarUrl, authMode: 'traccar-user-session', authenticated: Boolean(req ? getSession(req) : false), configExists: fs.existsSync(configFile), allowUnsafeGoogleTiles: config.allowUnsafeGoogleTiles }; }
+function pushoverConfigured() { return Boolean(config.pushover.token && config.pushover.user); }
+function firebaseConfigured() { return Boolean(config.firebase.vapidKey && config.firebase.webConfigJson); }
+function safePublicConfig(req = null) {
+  return {
+    pollingMs: config.pollingMs,
+    traccarUrl: config.traccarUrl,
+    authMode: 'traccar-user-session',
+    authenticated: Boolean(req ? getSession(req) : false),
+    configExists: fs.existsSync(configFile),
+    allowUnsafeGoogleTiles: config.allowUnsafeGoogleTiles,
+    mobile: { installable: true, serviceWorker: true, appUrl: config.publicAppUrl || '' },
+    notifications: {
+      pushover: { enabled: pushoverConfigured(), deviceConfigured: Boolean(config.pushover.device), webhookReady: Boolean(config.traccarWebhookSecret) },
+      firebase: { enabled: firebaseConfigured(), vapidKeyConfigured: Boolean(config.firebase.vapidKey), webConfigConfigured: Boolean(config.firebase.webConfigJson) }
+    }
+  };
+}
 function redact(value) { if (!value) return ''; const s = String(value); return s.length <= 8 ? '********' : `${s.slice(0, 4)}…${s.slice(-4)}`; }
 function parseCookies(req) { const header = req.headers.cookie || ''; return Object.fromEntries(header.split(';').map((part) => { const [key, ...rest] = part.trim().split('='); if (!key) return null; return [decodeURIComponent(key), decodeURIComponent(rest.join('=') || '')]; }).filter(Boolean)); }
 function cookieOptions(req) { const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https'; return { httpOnly: true, sameSite: 'lax', secure: Boolean(isSecure), path: '/', maxAge: config.sessionTtlMs }; }
@@ -62,6 +91,7 @@ function destroyLocalSession(req, res) { const sid = parseCookies(req)[COOKIE_NA
 function cleanupSessions() { const now = Date.now(); for (const [sid, session] of sessions.entries()) if (!session?.expiresAt || session.expiresAt <= now) sessions.delete(sid); }
 function getSession(req) { cleanupSessions(); const sid = parseCookies(req)[COOKIE_NAME]; if (!sid) return null; const session = sessions.get(sid); if (!session) return null; if (session.expiresAt <= Date.now()) { sessions.delete(sid); return null; } session.lastSeenAt = Date.now(); session.expiresAt = Date.now() + config.sessionTtlMs; return session; }
 function requireAuth(req, res, next) { const session = getSession(req); if (!session) return res.status(401).json({ ok: false, error: 'Login necessário. Entre com as credenciais do Traccar.' }); req.rafacarSession = session; return next(); }
+function requireAdministrator(req, res, next) { if (!req.rafacarSession?.user?.administrator) return res.status(403).json({ ok: false, error: 'Somente administrador pode testar notificacoes.' }); return next(); }
 
 async function loginToTraccar(login, password) {
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 18000);
@@ -101,6 +131,50 @@ async function buildSnapshot(req) {
   return { ok: true, user: req.rafacarSession?.user || null, server: server.status === 'fulfilled' ? server.value : null, devices: devices.status === 'fulfilled' && Array.isArray(devices.value) ? devices.value : [], positions: positions.status === 'fulfilled' && Array.isArray(positions.value) ? positions.value : [], events: events.status === 'fulfilled' && Array.isArray(events.value) ? events.value : [], errors: [server, devices, positions, events].filter((item) => item.status === 'rejected').map((item) => item.reason?.message || String(item.reason)), config: safePublicConfig(req) };
 }
 
+function formatWebhookMessage(payload = {}) {
+  const event = payload.event || payload.type || payload.alarm || payload.notification || 'evento';
+  const device = payload.device?.name || payload.deviceName || payload.name || payload.device?.uniqueId || payload.deviceId || 'veiculo';
+  const time = payload.eventTime || payload.deviceTime || payload.fixTime || payload.serverTime || new Date().toISOString();
+  const address = payload.position?.address || payload.address || '';
+  const speed = payload.position?.speed ?? payload.speed;
+  const parts = [`${device}: ${event}`, `Horario: ${time}`];
+  if (address) parts.push(`Local: ${address}`);
+  if (speed !== undefined && speed !== null && speed !== '') parts.push(`Velocidade: ${speed}`);
+  return parts.join('\n');
+}
+
+async function sendPushoverMessage({ title = 'RAFACAR RASTREADORES', message, priority = config.pushover.priority, url = config.publicAppUrl }) {
+  if (!pushoverConfigured()) {
+    const error = new Error('Pushover nao configurado. Defina PUSHOVER_APP_TOKEN e PUSHOVER_USER_KEY na Railway.');
+    error.status = 503;
+    throw error;
+  }
+  const body = new URLSearchParams({
+    token: config.pushover.token,
+    user: config.pushover.user,
+    title: String(title).slice(0, 250),
+    message: String(message || 'Teste RAFACAR').slice(0, 1024),
+    priority: String(Number.isFinite(priority) ? priority : 0),
+    sound: config.pushover.sound || 'pushover'
+  });
+  if (config.pushover.device) body.set('device', config.pushover.device);
+  if (url) {
+    body.set('url', url);
+    body.set('url_title', 'Abrir RAFACAR');
+  }
+  const response = await fetch('https://api.pushover.net/1/messages.json', { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+  const text = await response.text();
+  let payload = null;
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = { raw: text }; }
+  if (!response.ok || payload?.status === 0) {
+    const error = new Error(payload?.errors?.join(', ') || payload?.raw || `Pushover retornou HTTP ${response.status}`);
+    error.status = response.status || 502;
+    error.payload = payload;
+    throw error;
+  }
+  return payload;
+}
+
 app.disable('x-powered-by'); app.set('trust proxy', 1);
 const connectSrc = ["'self'", 'https://*.tile.openstreetmap.org', 'https://*.basemaps.cartocdn.com', 'https://server.arcgisonline.com'];
 const imgSrc = ["'self'", 'data:', 'blob:', 'https:'];
@@ -112,6 +186,17 @@ const loginLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 20, standardHe
 
 app.get('/api/health', (req, res) => { const session = getSession(req); res.set('Cache-Control', 'no-store'); res.json({ ok: true, service: 'rafacar-dev2', version: '6.0.0-login-traccar', port: config.port, traccarUrl: config.traccarUrl, authMode: 'traccar-user-session', authenticated: Boolean(session), sessions: sessions.size, configExists: fs.existsSync(configFile), user: session?.user ? redact(session.user.email || session.user.name) : '' }); });
 app.get('/api/config', (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ ok: true, config: safePublicConfig(req) }); });
+app.get('/api/mobile/status', requireAuth, (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ ok: true, mobile: safePublicConfig(req).mobile, notifications: safePublicConfig(req).notifications }); });
+app.post('/api/mobile/pushover/test', requireAuth, requireAdministrator, async (req, res) => {
+  try {
+    const user = req.rafacarSession?.user?.name || req.rafacarSession?.user?.email || 'admin';
+    const payload = await sendPushoverMessage({ title: 'Teste RAFACAR', message: `Notificacao Pushover enviada pelo painel RAFACAR.\nUsuario: ${user}\nHorario: ${new Date().toISOString()}` });
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, result: { status: payload?.status || 1, request: payload?.request || null } });
+  } catch (error) {
+    res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao enviar Pushover.', details: error.payload || null });
+  }
+});
 app.post('/api/auth/login', loginLimiter, async (req, res) => { try { const body = req.body || {}; const login = String(body.email || body.user || body.username || '').trim(); const password = String(body.password || ''); if (!login || login.length > 180) return res.status(400).json({ ok: false, error: 'Usuário/e-mail inválido.' }); if (!password || password.length > 300) return res.status(400).json({ ok: false, error: 'Senha inválida.' }); const { remoteCookie, user } = await loginToTraccar(login, password); createLocalSession(req, res, remoteCookie, user); res.set('Cache-Control', 'no-store'); return res.json({ ok: true, user, config: safePublicConfig(req) }); } catch (error) { return res.status(error.status || 401).json({ ok: false, error: error.message || 'Login inválido no Traccar.' }); } });
 app.post('/api/auth/logout', (req, res) => { destroyLocalSession(req, res); res.set('Cache-Control', 'no-store'); res.json({ ok: true }); });
 app.get('/api/auth/me', requireAuth, async (req, res) => { try { const remoteUser = await traccarFetch(req, '/api/session'); req.rafacarSession.user = sanitizeUser(remoteUser, req.rafacarSession.user?.email || ''); res.set('Cache-Control', 'no-store'); res.json({ ok: true, authenticated: true, user: req.rafacarSession.user, config: safePublicConfig(req) }); } catch { destroyLocalSession(req, res); res.status(401).json({ ok: false, authenticated: false, error: 'Sessão expirada. Faça login novamente.' }); } });
@@ -120,6 +205,17 @@ app.get('/api/snapshot', requireAuth, async (req, res) => { try { res.set('Cache
 app.get('/api/command-types', requireAuth, async (req, res) => { try { const deviceId = Number(req.query.deviceId); const query = Number.isFinite(deviceId) && deviceId > 0 ? `?deviceId=${deviceId}` : ''; const payload = await traccarFetch(req, `/api/commands/types${query}`); res.set('Cache-Control', 'no-store'); res.json(Array.isArray(payload) ? payload : []); } catch (error) { res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao carregar comandos.' }); } });
 app.post('/api/send-command', requireAuth, async (req, res) => { try { const body = req.body || {}; const deviceId = Number(body.deviceId); const type = String(body.type || '').trim(); if (!Number.isFinite(deviceId) || deviceId <= 0) return res.status(400).json({ ok: false, error: 'deviceId inválido.' }); if (!type || type.length > 80) return res.status(400).json({ ok: false, error: 'Tipo de comando inválido.' }); const attributes = body.attributes && typeof body.attributes === 'object' && !Array.isArray(body.attributes) ? body.attributes : {}; const command = { id: 0, deviceId, type, attributes }; const payload = await traccarFetch(req, '/api/commands/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(command) }); res.json({ ok: true, command: payload }); } catch (error) { res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao enviar comando.', details: error.payload || null }); } });
 app.all('/api/traccar/*', requireAuth, async (req, res) => { try { if (!allowedMethods.has(req.method)) return res.status(405).json({ ok: false, error: 'Método não permitido.' }); const rawPath = `/${req.params[0] || ''}`.replace(/\/+/g, '/'); const apiPath = rawPath.startsWith('/api/') ? rawPath : `/api${rawPath}`; if (!isAllowedEndpoint(apiPath)) return res.status(403).json({ ok: false, error: 'Endpoint bloqueado pelo proxy seguro.', apiPath }); const query = new URLSearchParams(req.query).toString(); const finalPath = query ? `${apiPath}?${query}` : apiPath; const hasBody = !['GET', 'HEAD'].includes(req.method); const payload = await traccarFetch(req, finalPath, { method: req.method, headers: hasBody ? { 'Content-Type': 'application/json' } : {}, body: hasBody ? JSON.stringify(req.body || {}) : undefined }); res.set('Cache-Control', 'no-store'); res.json(payload); } catch (error) { res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao conectar ao Traccar.', details: error.payload || null }); } });
+app.post('/api/webhooks/traccar/pushover', async (req, res) => {
+  try {
+    const providedSecret = String(req.get('x-rafacar-webhook-secret') || req.query.secret || '');
+    if (config.traccarWebhookSecret && providedSecret !== config.traccarWebhookSecret) return res.status(401).json({ ok: false, error: 'Webhook nao autorizado.' });
+    if (!config.traccarWebhookSecret) return res.status(503).json({ ok: false, error: 'Defina TRACCAR_WEBHOOK_SECRET antes de ativar o webhook.' });
+    const payload = await sendPushoverMessage({ title: 'Alerta RAFACAR', message: formatWebhookMessage(req.body || {}) });
+    res.json({ ok: true, result: { status: payload?.status || 1, request: payload?.request || null } });
+  } catch (error) {
+    res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao processar webhook Pushover.', details: error.payload || null });
+  }
+});
 app.use(express.static(distDir, { etag: true, maxAge: '1h', setHeaders(res, filePath) { if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-store'); } }));
 app.get('*', (_req, res) => { res.sendFile(path.join(distDir, 'index.html')); });
 app.use((error, _req, res, _next) => { console.error('[server]', error); res.status(500).json({ ok: false, error: 'Erro interno no proxy RAFACAR RASTREADORES.' }); });

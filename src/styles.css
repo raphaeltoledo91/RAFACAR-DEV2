@@ -2826,3 +2826,36 @@ textarea:focus {
 
 /* RAFACAR COMPACT VEHICLE POPUP END */
 
+/* RAFACAR MOBILE APP MODULE START */
+
+.mobile-app-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.mobile-app-card {
+  align-content: start;
+  min-height: 148px;
+}
+
+.mobile-app-card .actions {
+  margin-top: 10px;
+}
+
+.integration-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+@media (max-width: 960px) {
+  .mobile-app-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* RAFACAR MOBILE APP MODULE END */
+

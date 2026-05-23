@@ -159,6 +159,17 @@ async function request(path, options = {}) {
   }
 }
 
+function registerMobileAppWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('[pwa] Service worker nao registrado:', error?.message || error);
+    });
+  }, { once: true });
+}
+
+if (typeof window !== 'undefined') registerMobileAppWorker();
+
 function useTheme() {
   const [theme, setTheme] = useState(() => localStorage.getItem('traccar-dev-theme') || 'dark');
   useEffect(() => {
@@ -1579,6 +1590,46 @@ function ReportsPage({ items, layerKey }) {
 function IntegrationsPage({ config }) {
   const integrations = normalizeArray(config?.integrations || config?.customIntegrations || config?.customerIntegrations);
   const ideas = ['WhatsApp', 'ERP', 'Financeiro', 'CRM', 'Webhooks', 'Aplicativo WebView', 'Alertas personalizados', 'API de terceiros'];
+  const notifications = config?.notifications || {};
+  const mobile = config?.mobile || {};
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installMessage, setInstallMessage] = useState('');
+  const [pushoverMessage, setPushoverMessage] = useState('');
+  const [pushoverBusy, setPushoverBusy] = useState(false);
+
+  useEffect(() => {
+    const handlePrompt = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+      setInstallMessage('Pronto para instalar como app no celular.');
+    };
+    window.addEventListener('beforeinstallprompt', handlePrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handlePrompt);
+  }, []);
+
+  const installMobileApp = async () => {
+    if (!installPrompt) {
+      setInstallMessage('No celular, use o menu do navegador e escolha "Adicionar a tela inicial".');
+      return;
+    }
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    setInstallPrompt(null);
+    setInstallMessage(result?.outcome === 'accepted' ? 'App instalado ou instalacao iniciada.' : 'Instalacao cancelada.');
+  };
+
+  const testPushover = async () => {
+    setPushoverBusy(true);
+    setPushoverMessage('');
+    try {
+      await request('/api/mobile/pushover/test', { method: 'POST', body: JSON.stringify({}) });
+      setPushoverMessage('Notificacao Pushover enviada com sucesso.');
+    } catch (error) {
+      setPushoverMessage(error.message || 'Falha ao enviar teste Pushover.');
+    } finally {
+      setPushoverBusy(false);
+    }
+  };
 
   return (
     <section className="panel integrations-panel">
@@ -1588,6 +1639,43 @@ function IntegrationsPage({ config }) {
           <p className="muted">Modulo reservado para adaptar o painel conforme cada cliente pedir.</p>
         </div>
         <Badge tone={integrations.length ? 'good' : 'warn'}><Zap size={14} /> {integrations.length ? `${integrations.length} ativa(s)` : 'Pronto para crescer'}</Badge>
+      </div>
+
+      <div className="mobile-app-grid">
+        <div className="integration-item mobile-app-card">
+          <b>App para celular</b>
+          <small>Instalavel como PWA/WebView, usando o mesmo painel seguro da Railway.</small>
+          <div className="actions">
+            <button className="primary-btn" type="button" onClick={installMobileApp}>
+              <Zap size={16} /> Instalar app
+            </button>
+          </div>
+          <small className="muted">{installMessage || (mobile.serviceWorker ? 'Service worker ativo para instalacao e cache basico.' : 'Service worker pendente.')}</small>
+        </div>
+
+        <div className="integration-item mobile-app-card">
+          <b>Notificacoes Pushover</b>
+          <small>Status: {notifications.pushover?.enabled ? 'Configurado' : 'Aguardando token/user key na Railway'}.</small>
+          <div className="integration-status-row">
+            <Badge tone={notifications.pushover?.enabled ? 'good' : 'warn'}>{notifications.pushover?.enabled ? 'Pushover OK' : 'Configurar'}</Badge>
+            <Badge tone={notifications.pushover?.webhookReady ? 'good' : 'warn'}>{notifications.pushover?.webhookReady ? 'Webhook OK' : 'Webhook pendente'}</Badge>
+          </div>
+          <div className="actions">
+            <button className="ghost-btn" type="button" onClick={testPushover} disabled={pushoverBusy || !notifications.pushover?.enabled}>
+              <Send size={16} /> {pushoverBusy ? 'Enviando...' : 'Testar Pushover'}
+            </button>
+          </div>
+          {pushoverMessage && <small className="muted">{pushoverMessage}</small>}
+        </div>
+
+        <div className="integration-item mobile-app-card">
+          <b>Firebase/FCM</b>
+          <small>Preparado para receber a configuracao Web/Firebase sem salvar segredo no repositorio.</small>
+          <div className="integration-status-row">
+            <Badge tone={notifications.firebase?.webConfigConfigured ? 'good' : 'warn'}>Config Web</Badge>
+            <Badge tone={notifications.firebase?.vapidKeyConfigured ? 'good' : 'warn'}>VAPID</Badge>
+          </div>
+        </div>
       </div>
 
       {integrations.length ? (
@@ -1718,7 +1806,10 @@ function AuthLoading() {
 function App() {
   const { theme, setTheme } = useTheme();
   const [auth, setAuth] = useState({ loading: true, authenticated: false, user: null });
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    return tabs.some(([key]) => key === requested) ? requested : 'dashboard';
+  });
   const [devices, setDevices] = useState([]);
   const [positions, setPositions] = useState([]);
   const [events, setEvents] = useState([]);

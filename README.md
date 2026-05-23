@@ -60,6 +60,7 @@ pm2 logs traccar-pro-frontend --lines 100
 Para publicar o RAFACAR-DEV2 fora da VPS do Traccar, use Railway como Web Service Node/Express.
 
 - Guia operacional: [`docs/RAILWAY_DEPLOY.md`](docs/RAILWAY_DEPLOY.md)
+- App mobile e push: [`docs/MOBILE_APP_PUSH.md`](docs/MOBILE_APP_PUSH.md)
 - Plano de evolucao: [`docs/LONG_TERM_PLAN.md`](docs/LONG_TERM_PLAN.md)
 - Configuracao versionada: [`railway.toml`](railway.toml)
 
