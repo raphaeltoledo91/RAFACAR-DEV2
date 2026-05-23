@@ -51,6 +51,18 @@ PUSHOVER_PRIORITY=0
 TRACCAR_WEBHOOK_SECRET=troque-por-um-segredo-forte
 ```
 
+Para ambiente local ou homologacao com arquivo JSON, use:
+
+```text
+data/notifications.local.json
+```
+
+Esse arquivo e ignorado pelo Git. O modelo versionado fica em:
+
+```text
+data/notifications.example.json
+```
+
 Depois de publicar, teste no painel:
 
 - Entre com usuario admin do Traccar.

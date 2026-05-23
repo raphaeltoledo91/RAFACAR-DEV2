@@ -12,6 +12,8 @@ const dataDir = path.join(rootDir, 'data');
 const distDir = path.join(rootDir, 'dist');
 const configFile = path.join(dataDir, 'config.local.json');
 const configExampleFile = path.join(dataDir, 'config.local.example.json');
+const notificationsConfigFile = path.join(dataDir, 'notifications.local.json');
+const notificationsExampleFile = path.join(dataDir, 'notifications.example.json');
 
 function readJsonSafe(file, fallback = {}) {
   try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback; }
@@ -21,32 +23,67 @@ function readJsonSafe(file, fallback = {}) {
 function ensureConfigFiles() {
   fs.mkdirSync(dataDir, { recursive: true });
   const example = { traccarUrl: 'https://gps2.rafacarrastreadores.com.br', port: 3000, pollingMs: 30000, allowUnsafeGoogleTiles: true, sessionTtlHours: 8 };
+  const notificationsExample = {
+    publicAppUrl: 'https://rafacar-dev2-production.up.railway.app',
+    traccarWebhookSecret: 'troque-por-um-segredo-forte',
+    pushover: {
+      appToken: '',
+      userKey: '',
+      device: '',
+      sound: 'pushover',
+      priority: 0
+    },
+    firebase: {
+      vapidKey: '',
+      webConfig: {
+        apiKey: '',
+        authDomain: '',
+        projectId: 'rafacar-dev2',
+        storageBucket: '',
+        messagingSenderId: '',
+        appId: ''
+      }
+    }
+  };
   if (!fs.existsSync(configExampleFile)) fs.writeFileSync(configExampleFile, `${JSON.stringify(example, null, 2)}\n`);
+  if (!fs.existsSync(notificationsExampleFile)) fs.writeFileSync(notificationsExampleFile, `${JSON.stringify(notificationsExample, null, 2)}\n`);
   if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, `${JSON.stringify(example, null, 2)}\n`, { mode: 0o600 });
   try { fs.chmodSync(configFile, 0o600); } catch { /* ignore */ }
+  try { if (fs.existsSync(notificationsConfigFile)) fs.chmodSync(notificationsConfigFile, 0o600); } catch { /* ignore */ }
 }
 
 ensureConfigFiles();
 const localConfig = readJsonSafe(configFile, {});
+const notificationsConfig = readJsonSafe(notificationsConfigFile, {});
+const pushoverConfig = notificationsConfig.pushover || {};
+const firebaseConfig = notificationsConfig.firebase || {};
+
+function firebaseWebConfigJson() {
+  const value = process.env.FIREBASE_WEB_CONFIG_JSON || localConfig.firebaseWebConfigJson || firebaseConfig.webConfigJson || firebaseConfig.webConfig || '';
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  try { return JSON.stringify(value); } catch { return ''; }
+}
+
 const config = {
   port: Number(process.env.PORT || localConfig.port || 3000),
   traccarUrl: String(process.env.TRACCAR_URL || localConfig.traccarUrl || 'https://gps2.rafacarrastreadores.com.br').replace(/\/+$/, ''),
   pollingMs: Number(process.env.POLLING_MS || localConfig.pollingMs || 30000),
   allowUnsafeGoogleTiles: String(process.env.ALLOW_UNSAFE_GOOGLE_TILES ?? localConfig.allowUnsafeGoogleTiles ?? 'true') !== 'false',
   sessionTtlMs: Number(process.env.SESSION_TTL_MS || (Number(localConfig.sessionTtlHours || 8) * 60 * 60 * 1000)),
-  publicAppUrl: String(process.env.PUBLIC_APP_URL || localConfig.publicAppUrl || '').replace(/\/+$/, ''),
+  publicAppUrl: String(process.env.PUBLIC_APP_URL || localConfig.publicAppUrl || notificationsConfig.publicAppUrl || '').replace(/\/+$/, ''),
   pushover: {
-    token: String(process.env.PUSHOVER_APP_TOKEN || process.env.PUSHOVER_TOKEN || localConfig.pushoverAppToken || localConfig.pushoverToken || ''),
-    user: String(process.env.PUSHOVER_USER_KEY || process.env.PUSHOVER_USER || localConfig.pushoverUserKey || localConfig.pushoverUser || ''),
-    device: String(process.env.PUSHOVER_DEVICE || localConfig.pushoverDevice || ''),
-    sound: String(process.env.PUSHOVER_SOUND || localConfig.pushoverSound || 'pushover'),
-    priority: Number(process.env.PUSHOVER_PRIORITY || localConfig.pushoverPriority || 0)
+    token: String(process.env.PUSHOVER_APP_TOKEN || process.env.PUSHOVER_TOKEN || localConfig.pushoverAppToken || localConfig.pushoverToken || pushoverConfig.appToken || pushoverConfig.token || ''),
+    user: String(process.env.PUSHOVER_USER_KEY || process.env.PUSHOVER_USER || localConfig.pushoverUserKey || localConfig.pushoverUser || pushoverConfig.userKey || pushoverConfig.user || ''),
+    device: String(process.env.PUSHOVER_DEVICE || localConfig.pushoverDevice || pushoverConfig.device || ''),
+    sound: String(process.env.PUSHOVER_SOUND || localConfig.pushoverSound || pushoverConfig.sound || 'pushover'),
+    priority: Number(process.env.PUSHOVER_PRIORITY || localConfig.pushoverPriority || pushoverConfig.priority || 0)
   },
   firebase: {
-    vapidKey: String(process.env.FIREBASE_VAPID_KEY || localConfig.firebaseVapidKey || ''),
-    webConfigJson: String(process.env.FIREBASE_WEB_CONFIG_JSON || localConfig.firebaseWebConfigJson || '')
+    vapidKey: String(process.env.FIREBASE_VAPID_KEY || localConfig.firebaseVapidKey || firebaseConfig.vapidKey || ''),
+    webConfigJson: firebaseWebConfigJson()
   },
-  traccarWebhookSecret: String(process.env.TRACCAR_WEBHOOK_SECRET || localConfig.traccarWebhookSecret || '')
+  traccarWebhookSecret: String(process.env.TRACCAR_WEBHOOK_SECRET || localConfig.traccarWebhookSecret || notificationsConfig.traccarWebhookSecret || '')
 };
 
 const app = express();

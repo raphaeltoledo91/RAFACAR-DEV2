@@ -2,6 +2,7 @@ node_modules/
 dist/
 logs/
 data/config.local.json
+data/notifications.local.json
 .env
 npm-debug.log*
 
