@@ -61,6 +61,7 @@ Para publicar o RAFACAR-DEV2 fora da VPS do Traccar, use Railway como Web Servic
 
 - Guia operacional: [`docs/RAILWAY_DEPLOY.md`](docs/RAILWAY_DEPLOY.md)
 - App mobile e push: [`docs/MOBILE_APP_PUSH.md`](docs/MOBILE_APP_PUSH.md)
+- Wrapper Android/WebView: [`mobile/capacitor`](mobile/capacitor)
 - Plano de evolucao: [`docs/LONG_TERM_PLAN.md`](docs/LONG_TERM_PLAN.md)
 - Configuracao versionada: [`railway.toml`](railway.toml)
 

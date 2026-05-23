@@ -7,6 +7,8 @@ O RAFACAR pode rodar no celular como PWA instalavel ou dentro de um WebView. Est
 - Railway hospeda o painel e o proxy.
 - O celular instala o app a partir do navegador.
 - O service worker `public/sw.js` melhora cache e experiencia de app.
+- `mobile/capacitor` prepara um APK Android/WebView usando Capacitor.
+- `.github/workflows/android-mobile.yml` gera APK debug direto pelo GitHub Actions.
 - Pushover recebe alertas por endpoint seguro no backend.
 
 ## Instalar no celular
@@ -17,6 +19,23 @@ Abra o dominio da Railway no Chrome/Android ou Safari/iPhone e use:
 - iPhone: Compartilhar > Adicionar a Tela de Inicio.
 
 O modulo `Integracoes` mostra um botao de instalacao quando o navegador permitir.
+
+## APK Android/WebView
+
+O pacote mobile fica separado para nao interferir no deploy web da Railway:
+
+```text
+mobile/capacitor
+```
+
+Para gerar APK sem usar a maquina local:
+
+- Abra o GitHub do projeto.
+- Va em `Actions`.
+- Rode `Build Android APK`.
+- Baixe o artefato `rafacar-android-debug-apk`.
+
+Esse APK debug e para teste funcional. Para Play Store, crie assinatura release com secrets do GitHub e mantenha `google-services.json` fora do repositorio ate fechar o fluxo de build assinado. Deixei um modelo em `mobile/capacitor/google-services.example.json`.
 
 ## Pushover
 
