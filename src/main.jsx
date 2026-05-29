@@ -1423,8 +1423,14 @@ function AttributesPage({ items }) {
   );
 }
 
+function isSensitiveKey(key = '') {
+  return /token|password|senha|secret|cookie|authorization|credential|session/i.test(String(key));
+}
+
 function KeyValueTable({ data }) {
-  const entries = Object.entries(data || {}).sort(([a], [b]) => a.localeCompare(b));
+  const entries = Object.entries(data || {})
+    .filter(([key]) => !isSensitiveKey(key))
+    .sort(([a], [b]) => a.localeCompare(b));
   if (!entries.length) return <div className="warn-box">Sem atributos para exibir.</div>;
   return (
     <div className="table-wrap">
