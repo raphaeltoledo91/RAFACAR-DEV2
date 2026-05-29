@@ -2859,3 +2859,134 @@ textarea:focus {
 
 /* RAFACAR MOBILE APP MODULE END */
 
+/* RAFACAR AI ASSISTANT AND USER MODULE START */
+
+.assistant-panel,
+.user-profile-panel {
+  min-height: calc(100vh - 172px);
+}
+
+.assistant-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.assistant-header h3 {
+  margin-bottom: 4px;
+}
+
+.assistant-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, .86fr) minmax(320px, 1.14fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.assistant-composer,
+.assistant-answer,
+.telemetry-highlight-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(7, 16, 19, .42);
+  backdrop-filter: blur(14px);
+  padding: 14px;
+}
+
+.assistant-composer textarea {
+  min-height: 146px;
+}
+
+.assistant-actions,
+.assistant-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.assistant-suggestions button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(34, 197, 94, .09);
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.assistant-answer-head,
+.telemetry-highlight-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.telemetry-highlight-title {
+  justify-content: flex-start;
+}
+
+.assistant-answer pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  color: var(--text);
+  font-family: inherit;
+  line-height: 1.55;
+}
+
+.assistant-report-table {
+  margin-top: 14px;
+}
+
+.telemetry-highlight-grid,
+.user-permission-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.telemetry-highlight-values .kv {
+  grid-template-columns: minmax(92px, .8fr) minmax(0, 1fr);
+}
+
+.attributes-controls {
+  margin-bottom: 12px;
+}
+
+.user-profile-extra {
+  margin-top: 16px;
+}
+
+:root[data-theme="light"] .assistant-composer,
+:root[data-theme="light"] .assistant-answer,
+:root[data-theme="light"] .telemetry-highlight-card {
+  background: rgba(255, 255, 255, .58);
+}
+
+@media (max-width: 1040px) {
+  .assistant-grid,
+  .telemetry-highlight-grid,
+  .user-permission-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .assistant-header,
+  .assistant-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .assistant-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* RAFACAR AI ASSISTANT AND USER MODULE END */

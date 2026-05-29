@@ -5,11 +5,14 @@ import {
   AlertTriangle,
   Battery,
   BatteryCharging,
+  Bot,
   Car,
   Circle,
   Clock3,
   Command,
   Cpu,
+  Download,
+  FileText,
   Gauge,
   KeyRound,
   Layers,
@@ -25,8 +28,10 @@ import {
   Send,
   Settings,
   ShieldCheck,
+  Thermometer,
   TimerReset,
   Unlock,
+  UserRound,
   Wifi,
   WifiOff,
   Zap
@@ -105,12 +110,14 @@ const MAP_LAYERS = {
 
 const tabs = [
   ['dashboard', 'Dashboard', Activity],
+  ['assistente', 'Assistente IA', Bot],
   ['veiculos', 'Veículos', Car],
   ['eventos', 'Alertas', AlertTriangle],
   ['relatorios', 'Relatórios', Route],
   ['comandos', 'Comandos', Command],
   ['atributos', 'Atributos', Cpu],
   ['integracoes', 'Integracoes', Zap],
+  ['usuario', 'Usuario', UserRound],
   ['config', 'Config', Settings]
 ];
 
@@ -413,6 +420,82 @@ function batteryPercent(device = {}, position = {}) {
 
 function vehicleVoltage(device = {}, position = {}) {
   return telemetryAttr(device, position, ['power', 'externalPower', 'voltage', 'vehicleVoltage', 'batteryVoltage', 'inputVoltage', 'io66', 'io67'], null);
+}
+
+const TELEMETRY_FIELD_GROUPS = [
+  {
+    key: 'can',
+    label: 'Rede CAN',
+    icon: Cpu,
+    fields: [
+      ['rpm', 'RPM', ['rpm', 'engineRpm', 'canRpm', 'obdRpm', 'io85']],
+      ['fuel', 'Combustivel', ['fuel', 'fuelLevel', 'canFuel', 'obdFuel', 'io89'], (value) => `${value}%`],
+      ['odometer', 'Hodometro', ['odometer', 'totalDistance', 'canOdometer', 'obdOdometer'], formatDistance],
+      ['engineLoad', 'Carga motor', ['engineLoad', 'canEngineLoad', 'obdEngineLoad'], (value) => `${value}%`],
+      ['coolant', 'Temp. motor', ['coolantTemp', 'engineTemp', 'canEngineTemp', 'obdCoolantTemp'], (value) => `${value} C`],
+      ['fuelUsed', 'Consumo', ['fuelUsed', 'fuelConsumption', 'canFuelUsed', 'obdFuelUsed']]
+    ]
+  },
+  {
+    key: 'temperature',
+    label: 'Temperatura',
+    icon: Thermometer,
+    fields: [
+      ['temperature', 'Temperatura', ['temperature', 'temp', 'sensorTemperature', 'io72'], (value) => `${value} C`],
+      ['temperature1', 'Temp. 1', ['temperature1', 'temp1', 'io73'], (value) => `${value} C`],
+      ['temperature2', 'Temp. 2', ['temperature2', 'temp2', 'io74'], (value) => `${value} C`],
+      ['humidity', 'Umidade', ['humidity', 'hum'], (value) => `${value}%`]
+    ]
+  },
+  {
+    key: 'driver',
+    label: 'Motorista',
+    icon: UserRound,
+    fields: [
+      ['driver', 'Motorista', ['driverName', 'driver', 'driverUniqueId', 'driverId', 'rfid', 'ibutton']],
+      ['driverPhone', 'Telefone', ['driverPhone', 'phone']],
+      ['driverCard', 'Cartao', ['driverCard', 'card', 'ibutton']]
+    ]
+  },
+  {
+    key: 'power',
+    label: 'Energia e IO',
+    icon: BatteryCharging,
+    fields: [
+      ['ignition', 'Ignicao', ['ignition', 'ignicao', 'engine', 'acc', 'io239'], ignitionLabel],
+      ['blocked', 'Bloqueio', ['blocked', 'bloqueado', 'engineBlocked', 'relay', 'io240'], yesNo],
+      ['battery', 'Bateria', ['batteryLevel', 'battery', 'batteryPercent'], formatBattery],
+      ['voltage', 'Tensao', ['power', 'externalPower', 'voltage', 'vehicleVoltage', 'batteryVoltage', 'inputVoltage'], formatVoltage],
+      ['motion', 'Movimento', ['motion', 'moving'], yesNo]
+    ]
+  }
+];
+
+function formatTelemetryValue(value, formatter = null) {
+  if (value === undefined || value === null || value === '') return '';
+  if (formatter) return formatter(value);
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+function collectTelemetryGroups(device = {}, position = {}) {
+  return TELEMETRY_FIELD_GROUPS
+    .map((group) => {
+      const values = group.fields
+        .map(([key, label, names, formatter]) => {
+          const raw = telemetryAttr(device, position, names, null);
+          const value = formatTelemetryValue(raw, formatter);
+          return value ? { key, label, value, raw } : null;
+        })
+        .filter(Boolean);
+      return values.length ? { ...group, values } : null;
+    })
+    .filter(Boolean);
+}
+
+function firstTelemetryValue(device = {}, position = {}, groupKey) {
+  const group = collectTelemetryGroups(device, position).find((item) => item.key === groupKey);
+  return group?.values?.[0]?.value || '';
 }
 
 function safeCourse(value) {
@@ -1117,6 +1200,10 @@ function VehicleList({ items, compact = false, selectedDeviceId = null, onSelect
 }
 
 function VehiclesPage({ items }) {
+  const showCan = items.some(({ device, position }) => collectTelemetryGroups(device, position || {}).some((group) => group.key === 'can'));
+  const showTemperature = items.some(({ device, position }) => collectTelemetryGroups(device, position || {}).some((group) => group.key === 'temperature'));
+  const showDriver = items.some(({ device, position }) => collectTelemetryGroups(device, position || {}).some((group) => group.key === 'driver'));
+
   return (
     <section className="panel">
       <h3>Veículos</h3>
@@ -1130,6 +1217,9 @@ function VehiclesPage({ items }) {
               <th>Velocidade</th>
               <th>Ignição</th>
               <th>Bateria</th>
+              {showCan && <th>Rede CAN</th>}
+              {showTemperature && <th>Temperatura</th>}
+              {showDriver && <th>Motorista</th>}
               <th>Última posição</th>
             </tr>
           </thead>
@@ -1145,6 +1235,9 @@ function VehiclesPage({ items }) {
                   <td>{position ? formatKmh(position.speed) : '-'}</td>
                   <td>{ignitionLabel(attrs.ignition)}</td>
                   <td>{formatBattery(getAttr(position || {}, ['batteryLevel', 'battery'], null))}</td>
+                  {showCan && <td>{firstTelemetryValue(device, position || {}, 'can') || '-'}</td>}
+                  {showTemperature && <td>{firstTelemetryValue(device, position || {}, 'temperature') || '-'}</td>}
+                  {showDriver && <td>{firstTelemetryValue(device, position || {}, 'driver') || '-'}</td>}
                   <td>{formatDate(last)}</td>
                 </tr>
               );
@@ -1261,19 +1354,61 @@ function CommandsPage({ items }) {
   );
 }
 
+function TelemetryHighlights({ device = {}, position = {} }) {
+  const groups = collectTelemetryGroups(device, position);
+  if (!groups.length) return <div className="warn-box">Este equipamento ainda nao enviou CAN, temperatura, motorista ou outros sensores relevantes no ultimo pacote.</div>;
+  return (
+    <div className="telemetry-highlight-grid">
+      {groups.map((group) => {
+        const Icon = group.icon || Cpu;
+        return (
+          <div className="telemetry-highlight-card" key={group.key}>
+            <div className="telemetry-highlight-title">
+              <Icon size={18} />
+              <b>{group.label}</b>
+            </div>
+            <div className="telemetry-highlight-values">
+              {group.values.map((entry) => (
+                <div className="kv" key={entry.key}>
+                  <span>{entry.label}</span>
+                  <b>{entry.value}</b>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function AttributesPage({ items }) {
-  const first = items[0] || {};
-  const deviceAttrs = getDeviceAttributes(first.device || {});
-  const positionAttrs = getPositionAttributes(first.position || {});
+  const firstDeviceId = items[0]?.device?.id ? String(items[0].device.id) : '';
+  const [deviceId, setDeviceId] = useState(firstDeviceId);
+  useEffect(() => {
+    if (!deviceId && firstDeviceId) setDeviceId(firstDeviceId);
+  }, [deviceId, firstDeviceId]);
+  const selected = items.find(({ device }) => String(device.id) === String(deviceId)) || items[0] || {};
+  const deviceAttrs = getDeviceAttributes(selected.device || {});
+  const positionAttrs = getPositionAttributes(selected.position || {});
   return (
     <section className="panel">
       <h3>Atributos e sensores</h3>
+      <div className="reports-controls attributes-controls">
+        <label>
+          <small>Veiculo</small>
+          <select value={deviceId} onChange={(event) => setDeviceId(event.target.value)}>
+            {items.map(({ device }) => <option key={device.id} value={device.id}>{getVehicleName(device)}</option>)}
+          </select>
+        </label>
+      </div>
       <div className="mini-grid" style={{ marginBottom: 12 }}>
-        <Info label="GPS válido" value={yesNo(first.position?.valid)} />
+        <Info label="GPS valido" value={yesNo(selected.position?.valid)} />
         <Info label="Distância" value={formatDistance(positionAttrs.distance)} />
         <Info label="Total distance" value={formatDistance(positionAttrs.totalDistance)} />
         <Info label="Satélites" value={positionAttrs.sat || positionAttrs.satellites || '-'} />
       </div>
+      <TelemetryHighlights device={selected.device || {}} position={selected.position || {}} />
       <div className="layout">
         <div>
           <h3>Atributos do dispositivo</h3>
@@ -1349,13 +1484,22 @@ function flattenCsvRow(row = {}) {
   return {
     id: row.id ?? '',
     deviceId: row.deviceId ?? '',
-    deviceTime: row.deviceTime || row.fixTime || row.serverTime || '',
+    deviceTime: row.deviceTime || row.fixTime || row.serverTime || row.startTime || row.endTime || '',
+    startTime: row.startTime || '',
+    endTime: row.endTime || '',
     latitude: row.latitude ?? '',
     longitude: row.longitude ?? '',
-    speedKmh: kmh(row.speed),
+    speedKmh: row.speed !== undefined ? kmh(row.speed) : '',
+    maxSpeedKmh: row.maxSpeed !== undefined ? kmh(row.maxSpeed) : '',
+    averageSpeedKmh: row.averageSpeed !== undefined ? kmh(row.averageSpeed) : '',
     course: safeCourse(row.course),
     altitude: row.altitude ?? '',
-    address: row.address || '',
+    distance: row.distance ?? row.totalDistance ?? '',
+    duration: row.duration ?? '',
+    address: row.address || row.startAddress || row.endAddress || '',
+    startAddress: row.startAddress || '',
+    endAddress: row.endAddress || '',
+    type: row.type || '',
     ignition: attrs.ignition ?? '',
     motion: attrs.motion ?? '',
     battery: attrs.batteryLevel ?? attrs.battery ?? '',
@@ -1381,6 +1525,126 @@ function downloadCsv(filename, rows = []) {
   link.remove();
   URL.revokeObjectURL(url);
   return true;
+}
+
+function downloadText(filename, content = '') {
+  if (!String(content || '').trim()) return false;
+  const blob = new Blob([String(content)], { type: 'text/plain;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+const REPORT_TYPES = [
+  { value: 'route', label: 'Rota / playback', keywords: ['rota', 'trajeto', 'playback', 'percurso', 'caminho'] },
+  { value: 'stops', label: 'Paradas', keywords: ['parada', 'paradas', 'parou', 'ficou parado'] },
+  { value: 'trips', label: 'Viagens', keywords: ['viagem', 'viagens', 'deslocamento'] },
+  { value: 'events', label: 'Eventos', keywords: ['evento', 'eventos', 'alerta', 'alertas', 'alarme'] },
+  { value: 'summary', label: 'Resumo', keywords: ['resumo', 'km', 'quilometragem', 'distancia', 'horas'] }
+];
+
+function reportTypeLabel(type) {
+  return REPORT_TYPES.find((item) => item.value === type)?.label || type;
+}
+
+function detectReportType(text = '') {
+  const normalized = normalizeText(text);
+  return REPORT_TYPES.find((type) => type.keywords.some((keyword) => normalized.includes(normalizeText(keyword))))?.value || 'summary';
+}
+
+function detectPeriodFromText(text = '') {
+  const normalized = normalizeText(text);
+  const now = new Date();
+  const from = new Date(now);
+  const to = new Date(now);
+
+  if (/ontem/.test(normalized)) {
+    from.setDate(from.getDate() - 1);
+    from.setHours(0, 0, 0, 0);
+    to.setDate(to.getDate() - 1);
+    to.setHours(23, 59, 59, 999);
+  } else if (/semana|7 dias/.test(normalized)) {
+    from.setDate(from.getDate() - 7);
+  } else if (/mes|30 dias/.test(normalized)) {
+    from.setDate(from.getDate() - 30);
+  } else if (/24h|24 horas|ultimo dia|ultima 24|ultimas 24|ultimos 24/.test(normalized)) {
+    from.setHours(from.getHours() - 24);
+  } else if (/6h|6 horas/.test(normalized)) {
+    from.setHours(from.getHours() - 6);
+  } else {
+    from.setHours(0, 0, 0, 0);
+  }
+
+  return { from: datetimeLocalValue(from), to: datetimeLocalValue(to) };
+}
+
+function findVehicleFromText(text = '', items = []) {
+  const normalized = normalizeText(text);
+  if (!normalized) return items[0] || null;
+  return items.find(({ device }) => {
+    const candidates = [getVehicleName(device), getVehiclePlate(device), getVehicleUniqueId(device), device.id]
+      .filter(Boolean)
+      .map(normalizeText);
+    return candidates.some((candidate) => candidate && normalized.includes(candidate));
+  }) || items[0] || null;
+}
+
+function assistantFleetSummary(items = [], events = []) {
+  const total = items.length;
+  const online = items.filter(({ device }) => String(device.status).toLowerCase() === 'online').length;
+  const moving = items.filter(({ device, position }) => position && isMoving(device, position)).length;
+  const blocked = items.filter(({ device, position }) => isBlocked(device, position || {})).length;
+  const stale = items.filter(({ position }) => {
+    const minutes = minutesSincePosition(position || {});
+    return minutes !== null && minutes >= 60;
+  }).length;
+  const recentAlerts = normalizeArray(events).slice(0, 8).map((event) => `- ${formatDate(eventTime(event))}: ${alertText(event)}`).join('\n');
+
+  return [
+    `Frota visivel neste login: ${total} veiculos.`,
+    `Online: ${online}. Em movimento: ${moving}. Bloqueados: ${blocked}. Sem posicao ha mais de 1h: ${stale}.`,
+    recentAlerts ? `\nAlertas recentes:\n${recentAlerts}` : '\nSem alertas recentes retornados para este usuario.',
+    '\nTodas as informacoes acima vieram apenas dos veiculos liberados para este login.'
+  ].join('\n');
+}
+
+function assistantVehicleDetails(item = null) {
+  if (!item?.device) return 'Nao encontrei veiculo liberado para este usuario.';
+  const { device, position, event, category } = item;
+  const groups = collectTelemetryGroups(device, position || {});
+  const telemetry = groups.length
+    ? groups.map((group) => `${group.label}: ${group.values.map((entry) => `${entry.label} ${entry.value}`).join(', ')}`).join('\n')
+    : 'Nenhuma telemetria extra enviada no ultimo pacote.';
+  return [
+    `${getVehicleName(device)} (${vehicleLabel(category)})`,
+    `Status: ${statusLabel(device.status)}. Movimento: ${position ? movementLabel(movementState(device, position)) : 'sem posicao'}.`,
+    `Velocidade: ${position ? formatSpeed(position.speed) : '-'}. Ultima posicao: ${formatDate(position?.deviceTime || position?.fixTime || position?.serverTime)}.`,
+    `Placa/ID: ${getVehiclePlate(device) || getVehicleUniqueId(device) || '-'}. Bloqueio: ${isBlocked(device, position || {}) ? 'bloqueado' : 'liberado'}.`,
+    `Alerta atual: ${alertText(event, position || {})}.`,
+    `\n${telemetry}`
+  ].join('\n');
+}
+
+function assistantCustomReport(items = [], events = []) {
+  const rows = items.map(({ device, position, category }) => {
+    const groups = collectTelemetryGroups(device, position || {});
+    const extras = groups.map((group) => `${group.label}: ${group.values.map((entry) => `${entry.label} ${entry.value}`).join(', ')}`).join(' | ');
+    return `- ${getVehicleName(device)} | ${vehicleLabel(category)} | ${statusLabel(device.status)} | ${position ? formatSpeed(position.speed) : '-'} | ${formatDate(position?.deviceTime || position?.fixTime || position?.serverTime)}${extras ? ` | ${extras}` : ''}`;
+  });
+  return [
+    'Relatorio personalizado da frota visivel',
+    `Gerado em: ${formatDate(new Date())}`,
+    `Veiculos: ${items.length}`,
+    `Eventos recentes: ${normalizeArray(events).length}`,
+    '',
+    ...rows
+  ].join('\n');
 }
 
 function reportPointIcon(label = 'P', tone = 'info', course = 0) {
@@ -1571,15 +1835,179 @@ function ReportsPage({ items, layerKey }) {
               <tbody>
                 {rows.slice(0, 140).map((row, index) => (
                   <tr key={`${row.id || row.deviceTime || index}-${index}`}>
-                    <td>{formatDate(row.deviceTime || row.fixTime || row.serverTime)}</td>
-                    <td>{formatSpeed(row.speed)}</td>
-                    <td>{row.address || `${row.latitude ?? '-'}, ${row.longitude ?? '-'}`}</td>
+                    <td>{formatDate(row.deviceTime || row.fixTime || row.serverTime || row.startTime || row.endTime)}</td>
+                    <td>{row.speed !== undefined ? formatSpeed(row.speed) : '-'}</td>
+                    <td>{row.address || row.startAddress || row.endAddress || `${row.latitude ?? '-'}, ${row.longitude ?? '-'}`}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           {rows.length > 140 && <small className="muted">Mostrando 140 primeiros registros. A exportação CSV inclui todos os registros carregados.</small>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AssistantReportTable({ rows = [] }) {
+  if (!rows.length) return null;
+  return (
+    <div className="table-wrap report-table assistant-report-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Vel.</th>
+            <th>Dist.</th>
+            <th>Endereco / detalhe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(0, 80).map((row, index) => (
+            <tr key={`${row.id || row.deviceTime || row.startTime || index}-${index}`}>
+              <td>{formatDate(row.deviceTime || row.fixTime || row.serverTime || row.startTime || row.endTime)}</td>
+              <td>{row.speed !== undefined ? formatSpeed(row.speed) : '-'}</td>
+              <td>{formatDistance(row.distance ?? row.totalDistance)}</td>
+              <td>{row.address || row.startAddress || row.endAddress || row.type || `${row.latitude ?? '-'}, ${row.longitude ?? '-'}`}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {rows.length > 80 && <small className="muted">Mostrando 80 primeiros registros. A exportacao inclui todos os dados carregados.</small>}
+    </div>
+  );
+}
+
+function AIAssistantPage({ items, events }) {
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState(() => assistantFleetSummary(items, events));
+  const [rows, setRows] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [meta, setMeta] = useState(null);
+
+  useEffect(() => {
+    if (!question && !rows.length) setAnswer(assistantFleetSummary(items, events));
+  }, [items, events, question, rows.length]);
+
+  const runFormalReport = async (prompt) => {
+    const item = findVehicleFromText(prompt, items);
+    if (!item?.device?.id) {
+      setAnswer('Nao encontrei veiculo liberado neste login para gerar o relatorio.');
+      return;
+    }
+    const type = detectReportType(prompt);
+    const period = detectPeriodFromText(prompt);
+    const query = new URLSearchParams({
+      deviceId: String(item.device.id),
+      from: isoFromLocalInput(period.from),
+      to: isoFromLocalInput(period.to)
+    });
+    const payload = await request(`/api/traccar/reports/${type}?${query.toString()}`, { timeoutMs: 30000 });
+    const nextRows = normalizeReportRows(payload);
+    setRows(nextRows);
+    setMeta({ type, device: item.device, from: period.from, to: period.to });
+    setAnswer([
+      `Relatorio ${reportTypeLabel(type)} gerado para ${getVehicleName(item.device)}.`,
+      `Periodo: ${period.from} ate ${period.to}.`,
+      `Registros encontrados: ${nextRows.length}.`,
+      nextRows.length ? 'Use Exportar CSV para baixar os dados.' : 'Nao houve dados para este periodo.'
+    ].join('\n'));
+  };
+
+  const submitPrompt = async (prompt = question) => {
+    const text = String(prompt || '').trim();
+    setQuestion(text);
+    setMessage('');
+    setRows([]);
+    setBusy(true);
+    try {
+      const normalized = normalizeText(text);
+      if (!text) {
+        setAnswer(assistantFleetSummary(items, events));
+      } else if (/relatorio|rota|trajeto|playback|parada|viagem|evento|resumo|km|quilometragem/.test(normalized) && !/personalizado|geral da frota|frota/.test(normalized)) {
+        await runFormalReport(text);
+      } else if (/personalizado|geral da frota|frota|todos|situacao|situacao geral|status/.test(normalized)) {
+        setMeta({ type: 'custom', device: null, from: datetimeLocalValue(), to: datetimeLocalValue() });
+        setAnswer(assistantCustomReport(items, events));
+      } else {
+        const item = findVehicleFromText(text, items);
+        setMeta({ type: 'vehicle', device: item?.device || null, from: datetimeLocalValue(), to: datetimeLocalValue() });
+        setAnswer(assistantVehicleDetails(item));
+      }
+    } catch (error) {
+      setMessage(`Falha no assistente: ${error.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportAnswer = () => {
+    const ok = downloadText(`rafacar-assistente-${Date.now()}.txt`, answer);
+    if (!ok) setMessage('Nao ha resposta para exportar.');
+  };
+
+  const exportReport = () => {
+    const ok = downloadCsv(`rafacar-${meta?.type || 'relatorio'}-${meta?.device?.id || 'frota'}-${Date.now()}.csv`, rows);
+    if (!ok) setMessage('Nao ha dados de relatorio para exportar.');
+  };
+
+  const examples = [
+    'Resumo geral da frota',
+    'Relatorio de rota hoje',
+    'Paradas de hoje',
+    'Viagens nas ultimas 24 horas',
+    'Eventos de hoje',
+    'Informacoes CAN e temperatura'
+  ];
+
+  return (
+    <section className="panel assistant-panel">
+      <div className="assistant-header">
+        <div>
+          <h3>Assistente IA operacional</h3>
+          <p className="muted">Consulta apenas os veiculos e eventos liberados para o login atual. Relatorios formais passam pelo proxy autenticado do Traccar.</p>
+        </div>
+        <Badge tone="good"><ShieldCheck size={14} /> Escopo do usuario</Badge>
+      </div>
+
+      <div className="assistant-grid">
+        <div className="assistant-composer">
+          <label>
+            <small>Digite sua duvida ou pedido de relatorio</small>
+            <textarea
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder="Ex.: gerar rota de hoje do veiculo ABC1234, paradas de ontem, status da frota, temperatura do veiculo..."
+            />
+          </label>
+          <div className="assistant-actions">
+            <button className="primary-btn" type="button" onClick={() => submitPrompt()} disabled={busy}>
+              <Bot size={17} /> {busy ? 'Analisando...' : 'Perguntar'}
+            </button>
+            <button className="ghost-btn" type="button" onClick={exportAnswer} disabled={!answer}>
+              <Download size={17} /> Exportar TXT
+            </button>
+            <button className="ghost-btn" type="button" onClick={exportReport} disabled={!rows.length}>
+              <FileText size={17} /> Exportar CSV
+            </button>
+          </div>
+          <div className="assistant-suggestions">
+            {examples.map((example) => (
+              <button key={example} type="button" onClick={() => submitPrompt(example)} disabled={busy}>{example}</button>
+            ))}
+          </div>
+          {message && <div className="error-box">{message}</div>}
+        </div>
+
+        <div className="assistant-answer">
+          <div className="assistant-answer-head">
+            <b>Resposta</b>
+            <small>{meta?.device ? getVehicleName(meta.device) : `${items.length} veiculos visiveis`}</small>
+          </div>
+          <pre>{answer}</pre>
+          <AssistantReportTable rows={rows} />
         </div>
       </div>
     </section>
@@ -1717,6 +2145,106 @@ function ConfigPage({ config, health, refreshHealth, authUser, onLogout }) {
       <div className="actions" style={{ marginTop: 14 }}>
         <button className="ghost-btn" onClick={refreshHealth}><ShieldCheck size={17} /> Testar health</button>
         <button className="danger-btn" onClick={onLogout}><LogOut size={17} /> Sair</button>
+      </div>
+    </section>
+  );
+}
+
+function UserProfilePage({ authUser, onProfileUpdated }) {
+  const [profile, setProfile] = useState(null);
+  const [form, setForm] = useState({ name: authUser?.name || '', email: authUser?.email || '', phone: '' });
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setBusy(true);
+    request('/api/user/profile')
+      .then((payload) => {
+        if (cancelled) return;
+        const user = payload.user || authUser || {};
+        setProfile(user);
+        setForm({ name: user.name || '', email: user.email || '', phone: user.phone || '' });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setProfile(authUser || {});
+        setForm({ name: authUser?.name || '', email: authUser?.email || '', phone: authUser?.phone || '' });
+        setMessage(`Nao foi possivel carregar dados completos do usuario: ${error.message}`);
+      })
+      .finally(() => { if (!cancelled) setBusy(false); });
+    return () => { cancelled = true; };
+  }, [authUser]);
+
+  const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setMessage('');
+    try {
+      const payload = await request('/api/user/profile', { method: 'PUT', body: JSON.stringify(form) });
+      const user = payload.user || {};
+      setProfile(user);
+      setForm({ name: user.name || form.name, email: user.email || form.email, phone: user.phone || form.phone || '' });
+      onProfileUpdated?.(user);
+      setMessage('Dados do usuario atualizados pelo backend Traccar.');
+    } catch (error) {
+      setMessage(`Falha ao atualizar usuario: ${error.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const attrs = profile?.attributes && typeof profile.attributes === 'object' ? profile.attributes : {};
+
+  return (
+    <section className="panel user-profile-panel">
+      <div className="assistant-header">
+        <div>
+          <h3>Usuario logado</h3>
+          <p className="muted">Edicao limitada ao proprio usuario autenticado. Permissoes continuam sendo validadas pelo Traccar.</p>
+        </div>
+        <Badge tone={profile?.administrator ? 'good' : 'info'}>{profile?.administrator ? 'Administrador' : 'Usuario'}</Badge>
+      </div>
+
+      {message && <div className={message.startsWith('Falha') || message.startsWith('Nao') ? 'error-box' : 'success-box'}>{message}</div>}
+
+      <form className="form-grid" onSubmit={saveProfile}>
+        <label>
+          <small>Nome</small>
+          <input value={form.name} onChange={(event) => updateField('name', event.target.value)} />
+        </label>
+        <label>
+          <small>E-mail/login</small>
+          <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} />
+        </label>
+        <label>
+          <small>Telefone</small>
+          <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} />
+        </label>
+        <div className="full user-permission-grid">
+          <Info label="Somente leitura" value={yesNo(profile?.readonly)} />
+          <Info label="Dispositivos leitura" value={yesNo(profile?.deviceReadonly)} />
+          <Info label="Desativado" value={yesNo(profile?.disabled)} />
+          <Info label="ID Traccar" value={profile?.id || authUser?.id || '-'} />
+        </div>
+        <div className="full">
+          <button className="primary-btn" type="submit" disabled={busy}>
+            <ShieldCheck size={17} /> {busy ? 'Salvando...' : 'Salvar dados do usuario'}
+          </button>
+        </div>
+      </form>
+
+      <div className="layout user-profile-extra">
+        <div>
+          <h3>Atributos do usuario</h3>
+          <KeyValueTable data={attrs} />
+        </div>
+        <div>
+          <h3>Seguranca</h3>
+          <div className="warn-box">Senha e permissoes administrativas nao sao editadas neste painel. Qualquer bloqueio de permissao vem do backend Traccar.</div>
+        </div>
       </div>
     </section>
   );
@@ -1879,6 +2407,9 @@ function App() {
     catch { setAuth({ loading: false, authenticated: false, user: null }); }
   }, []);
   const handleLogin = useCallback((user, nextConfig) => { setAuth({ loading: false, authenticated: true, user }); setConfig(nextConfig || null); setLoading(true); }, []);
+  const handleProfileUpdated = useCallback((user) => {
+    setAuth((current) => ({ ...current, user: { ...(current.user || {}), ...(user || {}) } }));
+  }, []);
   const handleLogout = useCallback(async () => {
     try { await request('/api/auth/logout', { method: 'POST', body: JSON.stringify({}) }); } catch { /* ignore */ }
     setAuth({ loading: false, authenticated: false, user: null }); setDevices([]); setPositions([]); setEvents([]); setServerInfo(null); setHealth(null); setError(''); setLoading(false);
@@ -2014,12 +2545,14 @@ function App() {
             setFocusedVehicleId={setFocusedVehicleId}
           />
         )}
+        {activeTab === 'assistente' && <AIAssistantPage items={items} events={events} />}
         {activeTab === 'veiculos' && <VehiclesPage items={filteredItems} />}
         {activeTab === 'eventos' && <EventsPage events={events} devicesById={devicesById} />}
         {activeTab === 'relatorios' && <ReportsPage items={items} layerKey={layerKey} />}
         {activeTab === 'comandos' && <CommandsPage items={items} />}
         {activeTab === 'atributos' && <AttributesPage items={filteredItems} />}
         {activeTab === 'integracoes' && <IntegrationsPage config={config} />}
+        {activeTab === 'usuario' && <UserProfilePage authUser={auth.user} onProfileUpdated={handleProfileUpdated} />}
         {activeTab === 'config' && <ConfigPage config={config} health={health} refreshHealth={refreshHealth} authUser={auth.user} onLogout={handleLogout} />}
       </main>
     </div>

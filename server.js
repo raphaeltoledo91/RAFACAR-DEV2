@@ -123,6 +123,18 @@ function parseCookies(req) { const header = req.headers.cookie || ''; return Obj
 function cookieOptions(req) { const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https'; return { httpOnly: true, sameSite: 'lax', secure: Boolean(isSecure), path: '/', maxAge: config.sessionTtlMs }; }
 function parseSetCookie(headers) { const raw = headers.get('set-cookie'); if (!raw) return ''; return raw.split(/,(?=[^;,]+=)/g).map((part) => part.split(';')[0].trim()).filter(Boolean).join('; '); }
 function sanitizeUser(payload, fallbackLogin = '') { const user = payload && typeof payload === 'object' ? payload : {}; return { id: user.id ?? null, name: user.name || user.email || fallbackLogin, email: user.email || fallbackLogin, administrator: Boolean(user.administrator), readonly: Boolean(user.readonly), deviceReadonly: Boolean(user.deviceReadonly), disabled: Boolean(user.disabled) }; }
+function sanitizeProfilePayload(body = {}, currentUser = {}) {
+  const payload = { ...(currentUser && typeof currentUser === 'object' ? currentUser : {}) };
+  for (const key of ['password', 'token', 'hashedPassword', 'salt']) delete payload[key];
+  for (const key of ['name', 'email', 'phone', 'latitude', 'longitude', 'zoom', 'coordinateFormat']) {
+    if (body[key] !== undefined) payload[key] = typeof body[key] === 'string' ? body[key].trim() : body[key];
+  }
+  if (body.attributes && typeof body.attributes === 'object' && !Array.isArray(body.attributes)) {
+    payload.attributes = { ...(currentUser.attributes || {}), ...body.attributes };
+  }
+  payload.id = currentUser.id;
+  return payload;
+}
 function createLocalSession(req, res, remoteCookie, user) { const sid = crypto.randomBytes(32).toString('base64url'); const now = Date.now(); sessions.set(sid, { sid, remoteCookie, user, createdAt: now, lastSeenAt: now, expiresAt: now + config.sessionTtlMs }); res.cookie(COOKIE_NAME, sid, cookieOptions(req)); return sid; }
 function destroyLocalSession(req, res) { const sid = parseCookies(req)[COOKIE_NAME]; if (sid) sessions.delete(sid); res.clearCookie(COOKIE_NAME, { path: '/' }); }
 function cleanupSessions() { const now = Date.now(); for (const [sid, session] of sessions.entries()) if (!session?.expiresAt || session.expiresAt <= now) sessions.delete(sid); }
@@ -237,6 +249,31 @@ app.post('/api/mobile/pushover/test', requireAuth, requireAdministrator, async (
 app.post('/api/auth/login', loginLimiter, async (req, res) => { try { const body = req.body || {}; const login = String(body.email || body.user || body.username || '').trim(); const password = String(body.password || ''); if (!login || login.length > 180) return res.status(400).json({ ok: false, error: 'Usuário/e-mail inválido.' }); if (!password || password.length > 300) return res.status(400).json({ ok: false, error: 'Senha inválida.' }); const { remoteCookie, user } = await loginToTraccar(login, password); createLocalSession(req, res, remoteCookie, user); res.set('Cache-Control', 'no-store'); return res.json({ ok: true, user, config: safePublicConfig(req) }); } catch (error) { return res.status(error.status || 401).json({ ok: false, error: error.message || 'Login inválido no Traccar.' }); } });
 app.post('/api/auth/logout', (req, res) => { destroyLocalSession(req, res); res.set('Cache-Control', 'no-store'); res.json({ ok: true }); });
 app.get('/api/auth/me', requireAuth, async (req, res) => { try { const remoteUser = await traccarFetch(req, '/api/session'); req.rafacarSession.user = sanitizeUser(remoteUser, req.rafacarSession.user?.email || ''); res.set('Cache-Control', 'no-store'); res.json({ ok: true, authenticated: true, user: req.rafacarSession.user, config: safePublicConfig(req) }); } catch { destroyLocalSession(req, res); res.status(401).json({ ok: false, authenticated: false, error: 'Sessão expirada. Faça login novamente.' }); } });
+app.get('/api/user/profile', requireAuth, async (req, res) => {
+  try {
+    const userId = Number(req.rafacarSession?.user?.id);
+    if (!Number.isFinite(userId) || userId <= 0) return res.status(400).json({ ok: false, error: 'Usuario logado sem ID valido no Traccar.' });
+    const profile = await traccarFetch(req, `/api/users/${userId}`);
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, user: profile });
+  } catch (error) {
+    res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao carregar usuario logado.', details: error.payload || null });
+  }
+});
+app.put('/api/user/profile', requireAuth, async (req, res) => {
+  try {
+    const userId = Number(req.rafacarSession?.user?.id);
+    if (!Number.isFinite(userId) || userId <= 0) return res.status(400).json({ ok: false, error: 'Usuario logado sem ID valido no Traccar.' });
+    const currentUser = await traccarFetch(req, `/api/users/${userId}`);
+    const payload = sanitizeProfilePayload(req.body || {}, currentUser || {});
+    const updated = await traccarFetch(req, `/api/users/${userId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    req.rafacarSession.user = sanitizeUser(updated || payload, req.rafacarSession.user?.email || '');
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, user: updated || payload });
+  } catch (error) {
+    res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao atualizar usuario logado.', details: error.payload || null });
+  }
+});
 app.get('/api/bootstrap', requireAuth, async (req, res) => { try { res.set('Cache-Control', 'no-store'); res.json(await buildSnapshot(req)); } catch (error) { res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao carregar dados iniciais.' }); } });
 app.get('/api/snapshot', requireAuth, async (req, res) => { try { res.set('Cache-Control', 'no-store'); res.json(await buildSnapshot(req)); } catch (error) { res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao atualizar dados.' }); } });
 app.get('/api/command-types', requireAuth, async (req, res) => { try { const deviceId = Number(req.query.deviceId); const query = Number.isFinite(deviceId) && deviceId > 0 ? `?deviceId=${deviceId}` : ''; const payload = await traccarFetch(req, `/api/commands/types${query}`); res.set('Cache-Control', 'no-store'); res.json(Array.isArray(payload) ? payload : []); } catch (error) { res.status(error.status || 502).json({ ok: false, error: error.message || 'Falha ao carregar comandos.' }); } });
